@@ -7,7 +7,7 @@ file dependency:
 
 main.cpp
 |
--- MoveStone.h/.cpp
+-- MoveStone.h/.cc
 
 
 input definition:
@@ -34,7 +34,7 @@ function: (待補)
 
 struct Board{}
 
-void readInput(char* path, Board *b);
+int readInput(char* path, Board *b); // 0 表示input OK
 
 int eval(const Board *b);  //回傳值是combo數？或是更能顯示盤面情況的數？
 

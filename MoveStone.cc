@@ -8,7 +8,7 @@ using namespace std;
 
 void errorMsg(const char *msg) { fprintf(stderr, "Error!, %s\n", msg); }
 
-int readInput(char *path, Board *b) {
+int readInput(const char *path, Board *b) {
     FILE *fp = fopen(path, "r");
     char str[100];
     for(int i=0; i<5; i++) {
@@ -31,7 +31,7 @@ int readInput(char *path, Board *b) {
     return 0;
 }
 
-void showBoard(Board *b) {
+void showBoard(const Board *b) {
     for(int i=0; i<5; i++) {
         for(int j=0; j<6; j++)
             fprintf(stderr, "%d", b->board[i*6+j]);

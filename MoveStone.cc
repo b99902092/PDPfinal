@@ -3,15 +3,16 @@
 #include <cstring>
 #include <algorithm>
 #include <iostream>
+#include "MoveStone.h"
 using namespace std;
 
-void errorMsg(char *msg) { sprintf(stderr, "Error!, %s\n", msg); }
+void errorMsg(const char *msg) { fprintf(stderr, "Error!, %s\n", msg); }
 
 int readInput(char *path, Board *b) {
     FILE *fp = fopen(path, "r");
     char str[100];
     for(int i=0; i<5; i++) {
-        if( scanf("%s", str) == -1 ) {
+        if( fscanf(fp, "%s", str) == -1 ) {
             errorMsg("file less than 5 rows");
             return -1;
         }
@@ -30,10 +31,10 @@ int readInput(char *path, Board *b) {
     return 0;
 }
 
-void showBoard(board *b) {
+void showBoard(Board *b) {
     for(int i=0; i<5; i++) {
         for(int j=0; j<6; j++)
-            sprintf(stderr, "%d", b->board[i*6+j]);
-        sprintf(stderr, "\n");
+            fprintf(stderr, "%d", b->board[i*6+j]);
+        fprintf(stderr, "\n");
     }
 }

@@ -1,0 +1,6 @@
+初始想法使用IDA*來做
+
+main.cpp
+|
+-- MoveStone.h/.cpp
+

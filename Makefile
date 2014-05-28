@@ -1,13 +1,12 @@
-CC = g++
 FLAG = -O2 -Wall
 PROG = main.o MoveStone.o
 .PHONY: clean
 
 main: $(PROG)
-	$(CC) $(PROG) -o ComboSolver
+	$(CXX) $(PROG) -o main
 %.o: %.cpp
-	$(CC) $< $(FLAG) -c
-%.o: %.cc
-	$(CC) $< $(FLAG) -c
+	$(CXX) $< $(FLAG) -c
 clean:
-	rm -rf *.o ComboSolver
+	rm -rf *.o main
+run:
+	./main exampleInput.txt

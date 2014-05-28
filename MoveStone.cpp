@@ -101,5 +101,5 @@ int Board::calcBoardValue() const {
         b.showBoard();
 
     }
-    return 0;
+    return cmb;
 }

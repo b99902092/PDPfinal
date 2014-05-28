@@ -103,3 +103,16 @@ int Board::calcBoardValue() const {
     }
     return cmb;
 }
+
+int Board::maxCombo() const {
+    int cnt[7] = {}, cmb=0;
+    for(int i=0; i<R; i++)
+        for(int j=0; j<C; j++)
+            cnt[ board[i][j] ]++;
+
+    for(int i=1; i<=6; i++) {
+        if(cnt[i]<18) cmb += cnt[i]/3;
+        else cmb += (30-cnt[i])/3;
+    }
+    return cmb;
+}

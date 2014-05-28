@@ -11,6 +11,8 @@ struct Board {
     int readInput (const char* path);  /* return value: 0 is OK */
     void showBoard () const;  /* just show the board */
     int calcBoardValue () const;  /* return combo count of the board */
-    void eliminateElement(int i, int j, int clr, int mark[R][C]);
+    int maxCombo () const;
+    private:
+    void eliminateElement (int i, int j, int clr, int mark[R][C]);
 };
 

@@ -13,6 +13,7 @@ int main(int argc, char* argv[]) {
     board.readInput(argv[1]);
     board.showBoard();
     board.calcBoardValue();
+    printf("max Combo = %d\n", board.maxCombo());
 
 
     return 0;

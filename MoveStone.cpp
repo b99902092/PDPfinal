@@ -7,7 +7,7 @@
 using namespace std;
 
 void errorMsg(const char *msg) { fprintf(stderr, "Error!, %s\n", msg); }
-    
+
 int Board::readInput(const char *path) {
     FILE *fp = fopen(path, "r");
     char str[100];
@@ -73,12 +73,6 @@ int Board::calcBoardValue() const {
             }
         }
 
-        for(int i=0; i<R; i++) {
-            for(int j=0; j<C; j++)
-                fprintf(stderr, "%d", mark[i][j]);
-            fprintf(stderr, "\n");
-        }
-
         /* eliminate */
         for(int i=0; i<R; i++)
             for(int j=0; j<C; j++)
@@ -98,7 +92,7 @@ int Board::calcBoardValue() const {
                     b.board[i][j] = 0;
                 }
             }
-        b.showBoard();
+        //        b.showBoard();
 
     }
     return cmb;
@@ -115,4 +109,27 @@ int Board::maxCombo() const {
         else cmb += (30-cnt[i])/3;
     }
     return cmb;
+}
+
+Path Board::solve() const {
+    Board b;
+    Path path;
+    memcpy(&b, this, sizeof(Board));
+    //    memset(&path, 0, sizeof(Path));
+
+    //    if(calcBoardValue() >= maxCombo()) return path;
+
+    for(int bound=1; bound<=MAXSTEP; bound++) {
+        for(int pos=0; pos<R*C; pos++) {
+            int x=pos/C, y=pos%C;
+            path = b.ida_star(x, y, Direction(null), 0, bound);
+            //return value of idastar? path?
+            //parameter? prev_step, cost, bound, currentpath
+        }
+    }
+    return path;
+}
+
+Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound) {
+
 }

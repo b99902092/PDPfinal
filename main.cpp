@@ -12,8 +12,8 @@ int main(int argc, char* argv[]) {
     }
     board.readInput(argv[1]);
     board.showBoard();
-    board.calcBoardValue();
-    printf("max Combo = %d\n", board.maxCombo());
+    fprintf(stderr, "max Combo = %d\n", board.maxCombo());
+    board.solve();
 
 
     return 0;

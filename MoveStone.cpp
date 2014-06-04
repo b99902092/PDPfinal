@@ -8,6 +8,21 @@ using namespace std;
 
 void errorMsg(const char *msg) { fprintf(stderr, "Error!, %s\n", msg); }
 
+void Path::printReadablePath() {
+    if(dirLen == -1) {
+        fprintf(stderr, "no path found\n");
+        return;
+    }
+    fprintf(stderr, "start point = (%d, %d)\n", startX, startY);
+    fprintf(stderr, "path length = %d\n", dirLen);
+    for(int i=0; i<dirLen; i++) {
+        if(dir[i] == 8) fprintf(stderr, "up\n");
+        if(dir[i] == 2) fprintf(stderr, "down\n");
+        if(dir[i] == 4) fprintf(stderr, "left\n");
+        if(dir[i] == 6) fprintf(stderr, "right\n");
+    }
+}
+
 int Board::readInput(const char *path) {
     FILE *fp = fopen(path, "r");
     char str[100];
@@ -46,14 +61,14 @@ void Board::eliminateElement(int x, int y, int clr, int mark[R][C]) {
     int dy[] = {0, 0, 1, -1};
     mark[x][y] = 0;
     board[x][y] = 0;
-    for(int i=0; i<4; i++) {
-        if(x+dx[i]<0 || x+dx[i]>R || y+dy[i]<0 || y+dy[i]>C) continue;
+    for(int i=0; i<SIZE(dx); i++) {
+        if(x+dx[i]<0 || x+dx[i]>=R || y+dy[i]<0 || y+dy[i]>=C) continue;
         if(mark[x+dx[i]][y+dy[i]] == clr)
             eliminateElement(x+dx[i], y+dy[i], clr, mark);
     }
 }
 
-int Board::calcBoardValue() const {
+int Board::calcBoardCombo() const {
     Board b;
     memcpy(&b, this, sizeof(Board));
     int cmb = 0, flag = 0;
@@ -111,25 +126,71 @@ int Board::maxCombo() const {
     return cmb;
 }
 
+// ------------- not yet finished part --------------------
+
+
 Path Board::solve() const {
     Board b;
-    Path path;
     memcpy(&b, this, sizeof(Board));
+
+    Path answer;
     //    memset(&path, 0, sizeof(Path));
 
-    //    if(calcBoardValue() >= maxCombo()) return path;
+    //    if(calcBoardCombo() >= maxCombo()) return path;
 
-    for(int bound=1; bound<=MAXSTEP; bound++) {
+    for(int bound=1; bound<=3 && answer.dirLen==-1; bound++) { // iterative deepening
+        fprintf(stderr, "boundary = %d\n", bound);
         for(int pos=0; pos<R*C; pos++) {
             int x=pos/C, y=pos%C;
-            path = b.ida_star(x, y, Direction(null), 0, bound);
+            Path p = b.ida_star(x, y, Direction(null), 0, bound);
             //return value of idastar? path?
             //parameter? prev_step, cost, bound, currentpath
+
+            if(p.dirLen != -1) {
+                answer = p;
+                answer.startX = x; 
+                answer.startY = y;
+                break;
+            }
         }
     }
-    return path;
+    return answer;
+}
+
+int Board::heuristic() const{
+    return 0;
 }
 
 Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound) {
+    Path path;
+    int f = cost + heuristic();
+    if(f > bound) { //fail to continue
+        return path;
+    }
+    if(calcBoardCombo() >= bound) { //find solution, return a solution path
+        strncpy(path.dir, stack.s, sizeof(char)*stack.top);
+        path.dir[stack.top] = 0;
+        path.dirLen = strlen(path.dir);
+        return path;
+    }
+    int dx[] = {-1, 1, 0, 0}, dy[] = {0, 0, -1, 1};
+    for(int i=0; i<SIZE(dirList); i++) {
+        if(dirList[i] == (10 - prevStep)) continue; //
+        if(x+dx[i]<0 || x+dx[i]>=R || y+dy[i]<0 || y+dy[i]>=C) continue;
+        stack.push(dirList[i]);
+        swap(board[x][y], board[x+dx[i]][y+dy[i]]);
 
+        Path p = ida_star(x+dx[i], y+dy[i], dirList[i], cost+1, bound);
+
+        if(p.dirLen != -1) {
+            if(path.dirLen == -1 || p.dirLen < path.dirLen) {
+                path = p;
+            }
+        }
+
+        swap(board[x][y], board[x+dx[i]][y+dy[i]]);
+        stack.pop();
+    }
+
+    return path;
 }

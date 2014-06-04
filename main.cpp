@@ -11,10 +11,11 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     board.readInput(argv[1]);
+    
     board.showBoard();
     fprintf(stderr, "max Combo = %d\n", board.maxCombo());
-    board.solve();
-
+    Path path = board.solve();
+    path.printReadablePath();
 
     return 0;
 }

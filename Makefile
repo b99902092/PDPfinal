@@ -9,4 +9,4 @@ main: $(PROG)
 clean:
 	rm -rf *.o main
 run:
-	./main exampleInput.txt
+	./main input1.txt

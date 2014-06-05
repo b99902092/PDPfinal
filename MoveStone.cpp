@@ -25,6 +25,10 @@ void Path::printReadablePath() {
 
 int Board::readInput(const char *path) {
     FILE *fp = fopen(path, "r");
+    if(fp == NULL) {
+        errorMsg("no such input file");
+        return -1;
+    }
     char str[100];
     for(int i=0; i<R; i++) {
         if( fscanf(fp, "%s", str) == -1 ) {
@@ -71,6 +75,7 @@ void Board::eliminateElement(int x, int y, int clr, int mark[R][C]) {
 int Board::calcBoardCombo() const {
     Board b;
     memcpy(&b, this, sizeof(Board));
+
     int cmb = 0, flag = 0;
     while(1) {
         flag = 0;
@@ -80,10 +85,10 @@ int Board::calcBoardCombo() const {
             for(int j=0; j<C; j++) {
                 int l;
 
-                for(l=0; l<R && b.board[i][j]==b.board[i+l][j]; l++);
+                for(l=0; i+l<R && b.board[i][j]==b.board[i+l][j]; l++);
                 if(l>=3) for(int t=0; t<l; t++) mark[i+t][j] = b.board[i][j];
 
-                for(l=0; l<C && b.board[i][j]==b.board[i][j+l]; l++);
+                for(l=0; j+l<C && b.board[i][j]==b.board[i][j+l]; l++);
                 if(l>=3) for(int t=0; t<l; t++) mark[i][j+t] = b.board[i][j];
             }
         }
@@ -103,11 +108,13 @@ int Board::calcBoardCombo() const {
         for(int j=0; j<C; j++) 
             for(int i=R-1, t=R-1; i>=0; i--) {
                 if(b.board[i][j]) {
-                    b.board[t--][j] = b.board[i][j];
+                    while(t>=0 && b.board[t][j]) t--;
+                    if(i>=t) continue;
+                    b.board[t][j] = b.board[i][j];
                     b.board[i][j] = 0;
                 }
             }
-        //        b.showBoard();
+//        b.showBoard();
 
     }
     return cmb;
@@ -126,31 +133,29 @@ int Board::maxCombo() const {
     return cmb;
 }
 
-// ------------- not yet finished part --------------------
-
-
 Path Board::solve() const {
     Board b;
     memcpy(&b, this, sizeof(Board));
 
     Path answer;
-    //    memset(&path, 0, sizeof(Path));
+    
+    int maxCmb = maxCombo();
 
-    //    if(calcBoardCombo() >= maxCombo()) return path;
 
-    for(int bound=1; bound<=3 && answer.dirLen==-1; bound++) { // iterative deepening
-        fprintf(stderr, "boundary = %d\n", bound);
-        for(int pos=0; pos<R*C; pos++) {
-            int x=pos/C, y=pos%C;
-            Path p = b.ida_star(x, y, Direction(null), 0, bound);
-            //return value of idastar? path?
-            //parameter? prev_step, cost, bound, currentpath
+    for(int targetCmb=maxCmb; targetCmb>=1; targetCmb--) { // at least 1 combo
+        for(int bound=1; bound<=MAXSTEP && answer.dirLen==-1; bound++) { // iterative deepening
+            fprintf(stderr, "boundary = %d, target combo = %d\n", bound, targetCmb);
+            for(int pos=0; pos<R*C; pos++) {
+                int x=pos/C, y=pos%C;
+//                fprintf(stderr, "(%d, %d)\n", x, y);
+                Path p = b.ida_star(x, y, Direction(null), 0, bound, targetCmb);
 
-            if(p.dirLen != -1) {
-                answer = p;
-                answer.startX = x; 
-                answer.startY = y;
-                break;
+                if(p.dirLen != -1) {
+                    answer = p;
+                    answer.startX = x; 
+                    answer.startY = y;
+                    break;
+                }
             }
         }
     }
@@ -161,30 +166,34 @@ int Board::heuristic() const{
     return 0;
 }
 
-Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound) {
+Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target) {
     Path path;
     int f = cost + heuristic();
     if(f > bound) { //fail to continue
         return path;
     }
-    if(calcBoardCombo() >= bound) { //find solution, return a solution path
-        strncpy(path.dir, stack.s, sizeof(char)*stack.top);
-        path.dir[stack.top] = 0;
+//    fprintf(stderr, "cost = %d, bound = %d, target = %d, board combo = %d\n", cost, bound, target, calcBoardCombo()); 
+    if(calcBoardCombo() >= target) { //find solution, return a solution path
+        fprintf(stderr, "find sol!, %d\n", calcBoardCombo());
+        showBoard();
+        strncpy(path.dir, stack.s, sizeof(char)*stack.size());
+        path.dir[stack.size()] = 0;
         path.dirLen = strlen(path.dir);
         return path;
     }
     int dx[] = {-1, 1, 0, 0}, dy[] = {0, 0, -1, 1};
     for(int i=0; i<SIZE(dirList); i++) {
-        if(dirList[i] == (10 - prevStep)) continue; //
+        if(dirList[i] == (10 - prevStep)) continue; //no going back
         if(x+dx[i]<0 || x+dx[i]>=R || y+dy[i]<0 || y+dy[i]>=C) continue;
         stack.push(dirList[i]);
         swap(board[x][y], board[x+dx[i]][y+dy[i]]);
 
-        Path p = ida_star(x+dx[i], y+dy[i], dirList[i], cost+1, bound);
+        Path p = ida_star(x+dx[i], y+dy[i], dirList[i], cost+1, bound, target);
 
         if(p.dirLen != -1) {
             if(path.dirLen == -1 || p.dirLen < path.dirLen) {
                 path = p;
+                break; // can be deleted if we want to find multiple sols someday.
             }
         }
 

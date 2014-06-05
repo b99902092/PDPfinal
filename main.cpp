@@ -10,10 +10,12 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "no input path parameter!\n");
         return 0;
     }
-    board.readInput(argv[1]);
+    if( board.readInput(argv[1]) == -1) return 0;
+    //swap(board.board[0][2], board.board[0][3]);
     
+    fprintf(stderr, "show initial board:\n");
     board.showBoard();
-    fprintf(stderr, "max Combo = %d\n", board.maxCombo());
+    fprintf(stderr, "max possible Combo = %d, calcBoardCombo = %d\n", board.maxCombo(), board.calcBoardCombo());
     Path path = board.solve();
     path.printReadablePath();
 

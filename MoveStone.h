@@ -1,6 +1,6 @@
 #define R 5
 #define C 6
-#define MAXSTEP 40
+#define MAXSTEP 30
 #define INF 1000000
 #define SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
 #include<cstring>
@@ -18,7 +18,7 @@ struct Path {
         dirLen = startX = startY = -1;
     }
     void printReadablePath();
-    /* max step 40, vertical and horizontal moves only for now */
+    /* max step 30, vertical and horizontal moves only for now */
     /* direction represent as:
      * 7 8 9
      * 4 x 6
@@ -41,16 +41,18 @@ struct Board {
 
     private:
     void eliminateElement (int i, int j, int clr, int mark[R][C]);
-    Path ida_star(int x, int y, Direction prevStep, int cost, int bound);
+    Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target);
     int heuristic() const;
 };
 
 struct Stack {
     char s[MAXSTEP+1];
-    int top;
     Stack() { top = 0; }
     void push(int x) { s[top++] = x; }
     char pop() { return s[--top]; }
+    int size() { return top; }
+    private:
+    int top;
 
 };
 static Stack stack;

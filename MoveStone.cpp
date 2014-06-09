@@ -215,7 +215,7 @@ int Board::heuristic() const{
             }
     }
     // After all gems fallen
-    b.showBoard();
+    //b.showBoard();
     int min=10;
     vector<int> buffer;
     for(int color=1;color<7;color++){

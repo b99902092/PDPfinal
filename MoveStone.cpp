@@ -163,7 +163,11 @@ Path Board::solve() const {
 }
 int Board::calcDist3(int a, int b, int c) const{
 	int d = b-a-1 > 0 ? b-a-1 : 0;
-	d += c-b-1 > 0 ? c-b-1 : 0;
+	if(d==0){
+		d = c-b>1 ? c-b : 1;
+	}else{
+		d += c-a-2 > 0 ? c-a-2 : 0;
+	}
 	return d;
 }
 
@@ -211,36 +215,39 @@ int Board::heuristic() const{
             }
     }
     // After all gems fallen
-    //b.showBoard();
+    b.showBoard();
     int min=10;
     vector<int> buffer;
     for(int color=1;color<7;color++){
-	    for(int j=0; j<C; j++){
-		    for(int i=0; i<R; i++) {
-			    if(b.board[i][j]==color){
-				    buffer.push_back(j);
-			    }
-		    }
-	    }
-	    // For each color, find the minimum step to gather all gems together.
-	    /*
-	    for(int i=0;i<buffer.size();i++){
-	    	fprintf(stderr,"%d->",buffer.at(i));
-	    }
-	    fprintf(stderr,"\n");
-	    */
+    	buffer.clear();
+	for(int j=0; j<C; j++){
+		for(int i=0; i<R; i++) {
+			if(b.board[i][j]==color){
+				buffer.push_back(j);
+			}
+		}
+	}
+	// For each color, find the minimum step to gather all gems together.
+	/*
+	// XXX Debug 
+	for(int i=0;i<buffer.size();i++){
+		fprintf(stderr,"%d->",buffer.at(i));
+	}
+	if(buffer.size()>0) 
+		fprintf(stderr,"\n");
+		*/
 
-	    if(buffer.size()<3){
-		    continue;
-	    }else{
-		    for(int i=0;i<buffer.size()-2;i++){
-			    int d = calcDist3(buffer.at(i),buffer.at(i+1),buffer.at(i+2));
-			    if(d<min)
-				    min = d;
-		    }
-		    if(min == 0)
-		    	return 1;	// actually, we still need at least one more move to eliminate more gems.
-	    }
+	if(buffer.size()<3){
+		continue;
+	}else{
+		for(int i=0;i<buffer.size()-2;i++){
+			int d = calcDist3(buffer.at(i),buffer.at(i+1),buffer.at(i+2));
+			if(d<min)
+				min = d;
+		}
+		if(min == 0)
+			return 1;	// actually, we still need at least one more move to eliminate more gems.
+	}
     }
     return min;
 }
@@ -248,10 +255,12 @@ int Board::heuristic() const{
 Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target) {
 	Path path;
 	int h = heuristic();
-	//fprintf(stderr,"h = %d\n",h);
-	//if(h!=1){
-		//int trash = getchar();
-	//}
+	/*
+	fprintf(stderr,"h = %d\n",h);
+	if(h!=1){
+	int trash = getchar();
+	}
+	*/
 	int f = cost + h;
 	if(f > bound) { //fail to continue
 		return path;

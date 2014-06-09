@@ -33,11 +33,9 @@ struct Board {
      * 13 14 15 16 17 18
      * 19 20 21 22 23 24
      * 25 26 27 28 29 30 */
-    int board_fallen[R][C];
     int readInput (const char* path);  /* return value: 0 is OK */
     void showBoard () const;  /* just show the board */
-    void showFallen () const;  /* show the board after gems fallen*/
-    int calcBoardCombo ();  /* return combo count of the board */
+    int calcBoardCombo () const;  /* return combo count of the board */
     int maxCombo () const;
     Path solve() const; /* solve the pazzle and return path */
 
@@ -45,6 +43,7 @@ struct Board {
     void eliminateElement (int i, int j, int clr, int mark[R][C]);
     Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target);
     int heuristic() const;
+    int calcDist3(int a, int b, int c) const;
 };
 
 struct Stack {

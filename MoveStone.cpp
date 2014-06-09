@@ -3,6 +3,7 @@
 #include <cstring>
 #include <algorithm>
 #include <iostream>
+#include <vector>
 #include "MoveStone.h"
 using namespace std;
 
@@ -59,15 +60,6 @@ void Board::showBoard() const {
     }
     fprintf(stderr, "==================\n");
 }
-void Board::showFallen() const {
-    fprintf(stderr, "====show fallen board====\n");
-    for(int i=0; i<R; i++) {
-        for(int j=0; j<C; j++)
-            fprintf(stderr, "%d", board_fallen[i][j]);
-        fprintf(stderr, "\n");
-    }
-    fprintf(stderr, "==================\n");
-}
 
 void Board::eliminateElement(int x, int y, int clr, int mark[R][C]) {
     int dx[] = {1, -1, 0, 0};
@@ -81,7 +73,7 @@ void Board::eliminateElement(int x, int y, int clr, int mark[R][C]) {
     }
 }
 
-int Board::calcBoardCombo() {
+int Board::calcBoardCombo() const {
     Board b;
     memcpy(&b, this, sizeof(Board));
 
@@ -125,10 +117,7 @@ int Board::calcBoardCombo() {
             }
 //        b.showBoard();
     }
-    memcpy(board_fallen, b.board, sizeof(int)*R*C);
-    printf("Fallen:\n");
-    showFallen();
-    return cmb;
+    return 0;
 }
 
 int Board::maxCombo() const {
@@ -172,50 +161,129 @@ Path Board::solve() const {
     }
     return answer;
 }
-
-int Board::heuristic() const{
-	Board b;
-	memcpy(&b, this, sizeof(Board));
-	b.showBoard();
-	return 0;
+int Board::calcDist3(int a, int b, int c) const{
+	int d = b-a-1 > 0 ? b-a-1 : 0;
+	d += c-b-1 > 0 ? c-b-1 : 0;
+	return d;
 }
 
-Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target) {
-    Path path;
-//    fprintf(stderr, "cost = %d, bound = %d, target = %d, board combo = %d\n", cost, bound, target, calcBoardCombo()); 
-    if(calcBoardCombo() >= target) { //find solution, return a solution path
-        fprintf(stderr, "find sol!, %d\n", calcBoardCombo());
-        showBoard();
-        strncpy(path.dir, stack.s, sizeof(char)*stack.size());
-        path.dir[stack.size()] = 0;
-        path.dirLen = strlen(path.dir);
-        return path;
-    }
-    // Check f after calcBoardCombo, then we can get this.board_fallen -> can calc heuristic more efficiently.
-    int f = cost + heuristic();
-    if(f > bound) { //fail to continue
-        return path;
-    }
+int Board::heuristic() const{
+    Board b;
+    memcpy(&b, this, sizeof(Board));
 
-    int dx[] = {-1, 1, 0, 0}, dy[] = {0, 0, -1, 1};
-    for(int i=0; i<SIZE(dirList); i++) {
-        if(dirList[i] == (10 - prevStep)) continue; //no going back
-        if(x+dx[i]<0 || x+dx[i]>=R || y+dy[i]<0 || y+dy[i]>=C) continue;
-        stack.push(dirList[i]);
-        swap(board[x][y], board[x+dx[i]][y+dy[i]]);
+    int cmb = 0, flag = 0;
+    while(1) {
+        flag = 0;
+        int mark[R][C] = {};
+        /* calc connection */
+        for(int i=0; i<R; i++) {
+            for(int j=0; j<C; j++) {
+                int l;
 
-        Path p = ida_star(x+dx[i], y+dy[i], dirList[i], cost+1, bound, target);
+                for(l=0; i+l<R && b.board[i][j]==b.board[i+l][j]; l++);
+                if(l>=3) for(int t=0; t<l; t++) mark[i+t][j] = b.board[i][j];
 
-        if(p.dirLen != -1) {
-            if(path.dirLen == -1 || p.dirLen < path.dirLen) {
-                path = p;
-                break; // can be deleted if we want to find multiple sols someday.
+                for(l=0; j+l<C && b.board[i][j]==b.board[i][j+l]; l++);
+                if(l>=3) for(int t=0; t<l; t++) mark[i][j+t] = b.board[i][j];
             }
         }
 
-        swap(board[x][y], board[x+dx[i]][y+dy[i]]);
-        stack.pop();
-    }
+        /* eliminate */
+        for(int i=0; i<R; i++)
+            for(int j=0; j<C; j++)
+                if(mark[i][j]) {
+                    b.eliminateElement(i, j, mark[i][j], mark);
+                    cmb++;
+                    flag = 1;
+                }
 
-    return path;
+        if(flag == 0) break;
+
+        /* drop */
+        for(int j=0; j<C; j++) 
+            for(int i=R-1, t=R-1; i>=0; i--) {
+                if(b.board[i][j]) {
+                    while(t>=0 && b.board[t][j]) t--;
+                    if(i>=t) continue;
+                    b.board[t][j] = b.board[i][j];
+                    b.board[i][j] = 0;
+                }
+            }
+    }
+    // After all gems fallen
+    //b.showBoard();
+    int min=10;
+    vector<int> buffer;
+    for(int color=1;color<7;color++){
+	    for(int j=0; j<C; j++){
+		    for(int i=0; i<R; i++) {
+			    if(b.board[i][j]==color){
+				    buffer.push_back(j);
+			    }
+		    }
+	    }
+	    // For each color, find the minimum step to gather all gems together.
+	    /*
+	    for(int i=0;i<buffer.size();i++){
+	    	fprintf(stderr,"%d->",buffer.at(i));
+	    }
+	    fprintf(stderr,"\n");
+	    */
+
+	    if(buffer.size()<3){
+		    continue;
+	    }else{
+		    for(int i=0;i<buffer.size()-2;i++){
+			    int d = calcDist3(buffer.at(i),buffer.at(i+1),buffer.at(i+2));
+			    if(d<min)
+				    min = d;
+		    }
+		    if(min == 0)
+		    	return 1;	// actually, we still need at least one more move to eliminate more gems.
+	    }
+    }
+    return min;
+}
+
+Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target) {
+	Path path;
+	int h = heuristic();
+	//fprintf(stderr,"h = %d\n",h);
+	//if(h!=1){
+		//int trash = getchar();
+	//}
+	int f = cost + h;
+	if(f > bound) { //fail to continue
+		return path;
+	}
+	//    fprintf(stderr, "cost = %d, bound = %d, target = %d, board combo = %d\n", cost, bound, target, calcBoardCombo()); 
+	if(calcBoardCombo() >= target) { //find solution, return a solution path
+		fprintf(stderr, "find sol!, %d\n", calcBoardCombo());
+		showBoard();
+		strncpy(path.dir, stack.s, sizeof(char)*stack.size());
+		path.dir[stack.size()] = 0;
+		path.dirLen = strlen(path.dir);
+		return path;
+	}
+	int dx[] = {-1, 1, 0, 0}, dy[] = {0, 0, -1, 1};
+	for(int i=0; i<SIZE(dirList); i++) {
+		if(dirList[i] == (10 - prevStep)) continue; //no going back
+		if(x+dx[i]<0 || x+dx[i]>=R || y+dy[i]<0 || y+dy[i]>=C) continue;
+		stack.push(dirList[i]);
+		swap(board[x][y], board[x+dx[i]][y+dy[i]]);
+
+		Path p = ida_star(x+dx[i], y+dy[i], dirList[i], cost+1, bound, target);
+
+		if(p.dirLen != -1) {
+			if(path.dirLen == -1 || p.dirLen < path.dirLen) {
+				path = p;
+				break; // can be deleted if we want to find multiple sols someday.
+			}
+		}
+
+		swap(board[x][y], board[x+dx[i]][y+dy[i]]);
+		stack.pop();
+	}
+
+	return path;
 }

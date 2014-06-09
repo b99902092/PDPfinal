@@ -1,12 +1,13 @@
 FLAG = -O2 -Wall
 PROG = main.o MoveStone.o
+TARGET = main
 .PHONY: clean
 
 main: $(PROG)
-	$(CXX) $(PROG) -o main
+	$(CXX) $(PROG) -o $(TARGET) 
 %.o: %.cpp
 	$(CXX) $< $(FLAG) -c
 clean:
-	rm -rf *.o main
-run:
-	./main input1.txt
+	rm -rf *.o $(TARGET) 
+run: $(TARGET)
+	./$(TARGET) input1.txt

@@ -59,6 +59,15 @@ void Board::showBoard() const {
     }
     fprintf(stderr, "==================\n");
 }
+void Board::showFallen() const {
+    fprintf(stderr, "====show fallen board====\n");
+    for(int i=0; i<R; i++) {
+        for(int j=0; j<C; j++)
+            fprintf(stderr, "%d", board_fallen[i][j]);
+        fprintf(stderr, "\n");
+    }
+    fprintf(stderr, "==================\n");
+}
 
 void Board::eliminateElement(int x, int y, int clr, int mark[R][C]) {
     int dx[] = {1, -1, 0, 0};
@@ -72,7 +81,7 @@ void Board::eliminateElement(int x, int y, int clr, int mark[R][C]) {
     }
 }
 
-int Board::calcBoardCombo() const {
+int Board::calcBoardCombo() {
     Board b;
     memcpy(&b, this, sizeof(Board));
 
@@ -115,8 +124,10 @@ int Board::calcBoardCombo() const {
                 }
             }
 //        b.showBoard();
-
     }
+    memcpy(board_fallen, b.board, sizeof(int)*R*C);
+    printf("Fallen:\n");
+    showFallen();
     return cmb;
 }
 
@@ -163,15 +174,14 @@ Path Board::solve() const {
 }
 
 int Board::heuristic() const{
-    return 0;
+	Board b;
+	memcpy(&b, this, sizeof(Board));
+	b.showBoard();
+	return 0;
 }
 
 Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target) {
     Path path;
-    int f = cost + heuristic();
-    if(f > bound) { //fail to continue
-        return path;
-    }
 //    fprintf(stderr, "cost = %d, bound = %d, target = %d, board combo = %d\n", cost, bound, target, calcBoardCombo()); 
     if(calcBoardCombo() >= target) { //find solution, return a solution path
         fprintf(stderr, "find sol!, %d\n", calcBoardCombo());
@@ -181,6 +191,12 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
         path.dirLen = strlen(path.dir);
         return path;
     }
+    // Check f after calcBoardCombo, then we can get this.board_fallen -> can calc heuristic more efficiently.
+    int f = cost + heuristic();
+    if(f > bound) { //fail to continue
+        return path;
+    }
+
     int dx[] = {-1, 1, 0, 0}, dy[] = {0, 0, -1, 1};
     for(int i=0; i<SIZE(dirList); i++) {
         if(dirList[i] == (10 - prevStep)) continue; //no going back

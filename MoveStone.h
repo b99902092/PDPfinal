@@ -15,6 +15,16 @@ struct Stack {
     void push(int x) { s[top++] = x; }
     char pop() { return s[--top]; }
     int size() { return top; }
+    void print(){
+    	for(int i=0;i<top;i++){
+		if(s[i] == 8) fprintf(stderr, "up");
+		else if(s[i] == 2) fprintf(stderr, "down");
+		else if(s[i] == 4) fprintf(stderr, "left");
+		else if(s[i] == 6) fprintf(stderr, "right");
+		fprintf(stderr," -> ");
+	}
+	fprintf(stderr,"\n");
+    }
     private:
     int top;
 };
@@ -46,13 +56,16 @@ struct Board {
     int readInput (const char* path);  /* return value: 0 is OK */
     void showBoard () const;  /* just show the board */
     int calcBoardCombo () const;  /* return combo count of the board */
+    void show_combo_cost() const;
     int maxCombo () const;
     Path solve() const; /* solve the pazzle and return path */
+    //Path turnOne(int x,int y, int step,Path path);
+    void showTurnDetail(Path path) const;
 
     private:
     void eliminateElement (int i, int j, int clr, int mark[R][C]);
     Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack);
-    int heuristic() const;
+    int heuristic(int do_fall) const;
     int calcDist3(int a, int b, int c) const;
 };
 

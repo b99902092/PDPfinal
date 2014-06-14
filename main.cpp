@@ -18,6 +18,7 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "max possible Combo = %d, calcBoardCombo = %d\n", board.maxCombo(), board.calcBoardCombo());
     Path path = board.solve();
     path.printReadablePath();
+    //board.showTurnDetail(path);
 
     return 0;
 }

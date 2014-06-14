@@ -56,11 +56,11 @@ struct Board {
     int readInput (const char* path);  /* return value: 0 is OK */
     void showBoard () const;  /* just show the board */
     int calcBoardCombo () const;  /* return combo count of the board */
-    //void show_combo_cost() const;
+    void show_combo_cost() const;
     int maxCombo () const;
     Path solve() const; /* solve the pazzle and return path */
     //Path turnOne(int x,int y, int step,Path path);
-    //void showTurnDetail(Path path) const;
+    void showTurnDetail(Path path) const;
 
     private:
     void eliminateElement (int i, int j, int clr, int mark[R][C]);

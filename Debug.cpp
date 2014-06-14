@@ -312,3 +312,72 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
 
 	return path;
 }
+
+void Board::show_combo_cost() const{
+	int h = heuristic(1);	// that is, when cost = 0 -> count before falling
+	fprintf(stderr, "board combo = %d, heuristic = %d\n",calcBoardCombo(),h); 
+}
+void Board::showTurnDetail(Path path) const{
+	Board b;
+	int x = path.startX;
+	int y = path.startY;
+	memcpy(&b, this, sizeof(Board));
+	fprintf(stderr, "show initial board:\n");
+	showBoard();
+	for(int i=0;i<path.dirLen;i++){
+		// Turn the gem
+		int j=-1;
+		int dx[] = {-1, 1, 0, 0}, dy[] = {0, 0, -1, 1};
+		switch(path.dir[i]){
+			case 8:	// up
+				j = 0;
+				break;
+			case 2:	// down
+				j = 1;
+				break;
+			case 4:	// left
+				j = 2;
+				break;
+			case 6:	// right
+				j = 3;
+				break;
+			default:
+				fprintf(stderr,"Error path dir-%c\n",path.dir[i]);
+				break;
+		}
+		swap(b.board[x][y], b.board[x+dx[j]][y+dy[j]]);
+		x = x+dx[j];
+		y = y+dy[j];
+		// print out the status
+		b.showBoard();
+		b.show_combo_cost();
+	}
+}
+/*
+Path Board::turnOne(int x,int y, int step,Path path){
+	Path p=path;
+	//memcpy(&p, path, sizeof(Path));
+	int dx[] = {-1, 1, 0, 0}, dy[] = {0, 0, -1, 1};
+	int i;
+	if(step == 4){
+		i = 1;
+	}else if(step == 6){
+		i = 2;
+	}else if(step == 2){
+		i = 3;
+	}else if(step == 8){
+		i = 4;
+	}else{
+		fprintf(stderr,"Error: Invalid direction!(l/r/u/d)\n");
+		return p;
+	}
+	if(x+dx[i]<0 || x+dx[i]>=R || y+dy[i]<0 || y+dy[i]>=C){
+		fprintf(stderr,"Error: Invalid step!\n");
+	}else{
+		p.dir[p.dirLen++] = step;
+		swap(board[x][y], board[x+dx[i]][y+dy[i]]);
+		showBoard();
+		show_combo_cost();
+	}
+	return p;
+}*/

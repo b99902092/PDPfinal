@@ -166,62 +166,61 @@ Path Board::solve() const {
 }
 
 int Board::calcDist3(int a, int b, int c) const{
+// A--d1--B--d2---C
 	int d = b-a-1 > 0 ? b-a-1 : 0;
-	if(d==0){
-		d = c-b>1 ? c-b : 1;
-	}else{
-		d += c-a-2 > 0 ? c-a-2 : 0;
-	}
+	d += c-b-1 > 0 ? c-b-1 : 0;	// calc d2, c-b
 	return d;
 }
 
-int Board::heuristic() const{
-    return 0;
+int Board::heuristic(int do_fall) const{
+    //return 0;
     Board b;
     memcpy(&b, this, sizeof(Board));
 
-    int cmb = 0, flag = 0;
-    while(1) {
-        flag = 0;
-        int mark[R][C] = {};
-        /* calc connection */
-        for(int i=0; i<R; i++) {
-            for(int j=0; j<C; j++) {
-                int l;
+    if(do_fall != 0){
+	    int cmb = 0, flag = 0;
+	    while(1) {
+		    flag = 0;
+		    int mark[R][C] = {};
+		    /* calc connection */
+		    for(int i=0; i<R; i++) {
+			    for(int j=0; j<C; j++) {
+				    int l;
 
-                for(l=0; i+l<R && b.board[i][j]==b.board[i+l][j]; l++);
-                if(l>=3) for(int t=0; t<l; t++) mark[i+t][j] = b.board[i][j];
+				    for(l=0; i+l<R && b.board[i][j]==b.board[i+l][j]; l++);
+				    if(l>=3) for(int t=0; t<l; t++) mark[i+t][j] = b.board[i][j];
 
-                for(l=0; j+l<C && b.board[i][j]==b.board[i][j+l]; l++);
-                if(l>=3) for(int t=0; t<l; t++) mark[i][j+t] = b.board[i][j];
-            }
-        }
+				    for(l=0; j+l<C && b.board[i][j]==b.board[i][j+l]; l++);
+				    if(l>=3) for(int t=0; t<l; t++) mark[i][j+t] = b.board[i][j];
+			    }
+		    }
 
-        /* eliminate */
-        for(int i=0; i<R; i++)
-            for(int j=0; j<C; j++)
-                if(mark[i][j]) {
-                    b.eliminateElement(i, j, mark[i][j], mark);
-                    cmb++;
-                    flag = 1;
-                }
+		    /* eliminate */
+		    for(int i=0; i<R; i++)
+			    for(int j=0; j<C; j++)
+				    if(mark[i][j]) {
+					    b.eliminateElement(i, j, mark[i][j], mark);
+					    cmb++;
+					    flag = 1;
+				    }
 
-        if(flag == 0) break;
+		    if(flag == 0) break;
 
-        /* drop */
-        for(int j=0; j<C; j++) 
-            for(int i=R-1, t=R-1; i>=0; i--) {
-                if(b.board[i][j]) {
-                    while(t>=0 && b.board[t][j]) t--;
-                    if(i>=t) continue;
-                    b.board[t][j] = b.board[i][j];
-                    b.board[i][j] = 0;
-                }
-            }
+		    /* drop */
+		    for(int j=0; j<C; j++) 
+			    for(int i=R-1, t=R-1; i>=0; i--) {
+				    if(b.board[i][j]) {
+					    while(t>=0 && b.board[t][j]) t--;
+					    if(i>=t) continue;
+					    b.board[t][j] = b.board[i][j];
+					    b.board[i][j] = 0;
+				    }
+			    }
+	    }
     }
-    // After all gems fallen
+    // After all gems fallen / or do_fall == 0
     //b.showBoard();
-    int min=10;
+    int min=-1;
     vector<int> buffer;
     for(int color=1;color<7;color++){
     	buffer.clear();
@@ -247,25 +246,38 @@ int Board::heuristic() const{
 	}else{
 		for(int i=0;i<buffer.size()-2;i++){
 			int d = calcDist3(buffer.at(i),buffer.at(i+1),buffer.at(i+2));
-			if(d<min)
+			if(d<min || min==-1)
 				min = d;
 		}
 		if(min == 0)
 			return 1;	// actually, we still need at least one more move to eliminate more gems.
 	}
     }
-    return min;
+    if(min==-1){
+    	return 0;
+    }else{
+	    return min;
+    }
 }
 
 Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack) {
 	Path path;
-	int h = heuristic();
-
+	int h = heuristic(cost);	// that is, when cost = 0 -> count before falling
 	int f = cost + h;
+
 	if(f > bound) { //fail to continue
+		//fprintf(stderr, "\tDIE! -> cost = %d, bound = %d, heuristic = %d\n", cost, bound, h); 
+		//stack.print();
+		//showBoard();
+		//getc(stdin);
 		return path;
 	}
-	//    fprintf(stderr, "cost = %d, bound = %d, target = %d, board combo = %d\n", cost, bound, target, calcBoardCombo()); 
+	// XXX
+	/*
+	path.printReadablePath();
+	showBoard();
+	fprintf(stderr, "cost = %d, bound = %d, target = %d, board combo = %d, heuristic = %d\n", cost, bound, target, calcBoardCombo(),h); 
+	*/
 	if(calcBoardCombo() >= target) { //find solution, return a solution path
 		fprintf(stderr, "find sol!, %d\n", calcBoardCombo());
 		showBoard();
@@ -280,6 +292,10 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
 		if(x+dx[i]<0 || x+dx[i]>=R || y+dy[i]<0 || y+dy[i]>=C) continue;
 		stack.push(dirList[i]);
 		swap(board[x][y], board[x+dx[i]][y+dy[i]]);
+		// XXX
+		/*
+		fprintf(stderr,"(%d, %d) -> ",x,y);
+		stack.print();*/
 
 		Path p = ida_star(x+dx[i], y+dy[i], dirList[i], cost+1, bound, target, stack);
 
@@ -296,3 +312,72 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
 
 	return path;
 }
+
+void Board::show_combo_cost() const{
+	int h = heuristic(1);	// that is, when cost = 0 -> count before falling
+	fprintf(stderr, "board combo = %d, heuristic = %d\n",calcBoardCombo(),h); 
+}
+void Board::showTurnDetail(Path path) const{
+	Board b;
+	int x = path.startX;
+	int y = path.startY;
+	memcpy(&b, this, sizeof(Board));
+	fprintf(stderr, "show initial board:\n");
+	showBoard();
+	for(int i=0;i<path.dirLen;i++){
+		// Turn the gem
+		int j=-1;
+		int dx[] = {-1, 1, 0, 0}, dy[] = {0, 0, -1, 1};
+		switch(path.dir[i]){
+			case 8:	// up
+				j = 0;
+				break;
+			case 2:	// down
+				j = 1;
+				break;
+			case 4:	// left
+				j = 2;
+				break;
+			case 6:	// right
+				j = 3;
+				break;
+			default:
+				fprintf(stderr,"Error path dir-%c\n",path.dir[i]);
+				break;
+		}
+		swap(b.board[x][y], b.board[x+dx[j]][y+dy[j]]);
+		x = x+dx[j];
+		y = y+dy[j];
+		// print out the status
+		b.showBoard();
+		b.show_combo_cost();
+	}
+}
+/*
+Path Board::turnOne(int x,int y, int step,Path path){
+	Path p=path;
+	//memcpy(&p, path, sizeof(Path));
+	int dx[] = {-1, 1, 0, 0}, dy[] = {0, 0, -1, 1};
+	int i;
+	if(step == 4){
+		i = 1;
+	}else if(step == 6){
+		i = 2;
+	}else if(step == 2){
+		i = 3;
+	}else if(step == 8){
+		i = 4;
+	}else{
+		fprintf(stderr,"Error: Invalid direction!(l/r/u/d)\n");
+		return p;
+	}
+	if(x+dx[i]<0 || x+dx[i]>=R || y+dy[i]<0 || y+dy[i]>=C){
+		fprintf(stderr,"Error: Invalid step!\n");
+	}else{
+		p.dir[p.dirLen++] = step;
+		swap(board[x][y], board[x+dx[i]][y+dy[i]]);
+		showBoard();
+		show_combo_cost();
+	}
+	return p;
+}*/

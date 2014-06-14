@@ -1,6 +1,6 @@
 #define R 5
 #define C 6
-#define MAXSTEP 30
+#define MAXSTEP 15
 #define INF 1000000
 #define SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
 #include<cstring>
@@ -8,6 +8,16 @@
 typedef enum {null=0, up=8, down=2, left=4, right=6} Direction;
 
 static const Direction dirList[] = { up, down, left, right };
+
+struct Stack {
+    char s[MAXSTEP+1];
+    Stack() { top = 0; }
+    void push(int x) { s[top++] = x; }
+    char pop() { return s[--top]; }
+    int size() { return top; }
+    private:
+    int top;
+};
 
 struct Path {
     char dir[MAXSTEP+1];
@@ -41,19 +51,8 @@ struct Board {
 
     private:
     void eliminateElement (int i, int j, int clr, int mark[R][C]);
-    Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target);
+    Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack);
     int heuristic() const;
     int calcDist3(int a, int b, int c) const;
 };
 
-struct Stack {
-    char s[MAXSTEP+1];
-    Stack() { top = 0; }
-    void push(int x) { s[top++] = x; }
-    char pop() { return s[--top]; }
-    int size() { return top; }
-    private:
-    int top;
-
-};
-static Stack stack;

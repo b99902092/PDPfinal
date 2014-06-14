@@ -73,6 +73,8 @@ void Board::eliminateElement(int x, int y, int clr, int mark[R][C]) {
     }
 }
 
+//=======================================
+
 int Board::calcBoardCombo() const {
     Board b;
     memcpy(&b, this, sizeof(Board));
@@ -117,7 +119,7 @@ int Board::calcBoardCombo() const {
             }
 //        b.showBoard();
     }
-    return 0;
+    return cmb;
 }
 
 int Board::maxCombo() const {
@@ -147,8 +149,9 @@ Path Board::solve() const {
             fprintf(stderr, "boundary = %d, target combo = %d\n", bound, targetCmb);
             for(int pos=0; pos<R*C; pos++) {
                 int x=pos/C, y=pos%C;
+                Stack stack;
 //                fprintf(stderr, "(%d, %d)\n", x, y);
-                Path p = b.ida_star(x, y, Direction(null), 0, bound, targetCmb);
+                Path p = b.ida_star(x, y, Direction(null), 0, bound, targetCmb, stack);
 
                 if(p.dirLen != -1) {
                     answer = p;
@@ -161,6 +164,7 @@ Path Board::solve() const {
     }
     return answer;
 }
+
 int Board::calcDist3(int a, int b, int c) const{
 	int d = b-a-1 > 0 ? b-a-1 : 0;
 	if(d==0){
@@ -172,6 +176,7 @@ int Board::calcDist3(int a, int b, int c) const{
 }
 
 int Board::heuristic() const{
+    return 0;
     Board b;
     memcpy(&b, this, sizeof(Board));
 
@@ -252,15 +257,10 @@ int Board::heuristic() const{
     return min;
 }
 
-Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target) {
+Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack) {
 	Path path;
 	int h = heuristic();
-	/*
-	fprintf(stderr,"h = %d\n",h);
-	if(h!=1){
-	int trash = getchar();
-	}
-	*/
+
 	int f = cost + h;
 	if(f > bound) { //fail to continue
 		return path;
@@ -281,7 +281,7 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
 		stack.push(dirList[i]);
 		swap(board[x][y], board[x+dx[i]][y+dy[i]]);
 
-		Path p = ida_star(x+dx[i], y+dy[i], dirList[i], cost+1, bound, target);
+		Path p = ida_star(x+dx[i], y+dy[i], dirList[i], cost+1, bound, target, stack);
 
 		if(p.dirLen != -1) {
 			if(path.dirLen == -1 || p.dirLen < path.dirLen) {

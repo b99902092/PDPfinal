@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
-#include "MoveStone.h"
+#include "MoveGem.h"
 using namespace std;
 
 int main(int argc, char* argv[]) {
@@ -14,8 +14,10 @@ int main(int argc, char* argv[]) {
     //swap(board.board[0][2], board.board[0][3]);
     
     fprintf(stderr, "show initial board:\n");
-    board.showBoard();
-    fprintf(stderr, "max possible Combo = %d, calcBoardCombo = %d\n", board.maxCombo(), board.calcBoardCombo());
+    board.printBoard();
+    int cmb;
+    board.calcComboAndFallenBoard(&cmb);
+    fprintf(stderr, "max possible Combo = %d, calcBoardCombo = %d\n", board.maxCombo(), cmb);
     Path path = board.solve();
     path.printReadablePath();
     //board.showTurnDetail(path);

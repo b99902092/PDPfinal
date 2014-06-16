@@ -1,5 +1,5 @@
 FLAG = -O2 -Wall
-PROG = main.o MoveStone.o
+PROG = main.o MoveGem.o
 TARGET = main
 .PHONY: clean
 

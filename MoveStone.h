@@ -1,6 +1,6 @@
 #define R 5
 #define C 6
-#define MAXSTEP 15
+#define MAXSTEP 30
 #define INF 1000000
 #define SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
 #include<cstring>
@@ -16,14 +16,14 @@ struct Stack {
     char pop() { return s[--top]; }
     int size() { return top; }
     void print(){
-    	for(int i=0;i<top;i++){
-		if(s[i] == 8) fprintf(stderr, "up");
-		else if(s[i] == 2) fprintf(stderr, "down");
-		else if(s[i] == 4) fprintf(stderr, "left");
-		else if(s[i] == 6) fprintf(stderr, "right");
-		fprintf(stderr," -> ");
-	}
-	fprintf(stderr,"\n");
+        for(int i=0;i<top;i++){
+            if(s[i] == 8) fprintf(stderr, "up");
+            else if(s[i] == 2) fprintf(stderr, "down");
+            else if(s[i] == 4) fprintf(stderr, "left");
+            else if(s[i] == 6) fprintf(stderr, "right");
+            fprintf(stderr," -> ");
+        }
+        fprintf(stderr,"\n");
     }
     private:
     int top;
@@ -43,7 +43,7 @@ struct Path {
      * 7 8 9
      * 4 x 6
      * 1 2 3
-    */
+     */
 };
 
 struct Board {
@@ -66,6 +66,6 @@ struct Board {
     void eliminateElement (int i, int j, int clr, int mark[R][C]);
     Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack);
     int heuristic(int do_fall) const;
-    int calcDist3(int a, int b, int c) const;
+    int calcDist(int a, int b, int c) const;
 };
 

@@ -73,6 +73,19 @@ void Board::eliminateElement(int x, int y, int clr, int mark[R][C]) {
     }
 }
 
+int Board::maxCombo() const {
+    int cnt[7] = {}, cmb=0;
+    for(int i=0; i<R; i++)
+        for(int j=0; j<C; j++)
+            cnt[ board[i][j] ]++;
+
+    for(int i=1; i<=6; i++) {
+        if(cnt[i]<18) cmb += cnt[i]/3;
+        else cmb += (30-cnt[i])/3;
+    }
+    return cmb;
+}
+
 //=======================================
 
 int Board::calcBoardCombo() const {
@@ -122,19 +135,6 @@ int Board::calcBoardCombo() const {
     return cmb;
 }
 
-int Board::maxCombo() const {
-    int cnt[7] = {}, cmb=0;
-    for(int i=0; i<R; i++)
-        for(int j=0; j<C; j++)
-            cnt[ board[i][j] ]++;
-
-    for(int i=1; i<=6; i++) {
-        if(cnt[i]<18) cmb += cnt[i]/3;
-        else cmb += (30-cnt[i])/3;
-    }
-    return cmb;
-}
-
 Path Board::solve() const {
     Board b;
     memcpy(&b, this, sizeof(Board));
@@ -165,7 +165,7 @@ Path Board::solve() const {
     return answer;
 }
 
-int Board::calcDist3(int a, int b, int c) const{
+int Board::calcDist(int a, int b, int c) const{
 // A--d1--B--d2---C
 	int d = b-a-1 > 0 ? b-a-1 : 0;
 	d += c-b-1 > 0 ? c-b-1 : 0;	// calc d2, c-b
@@ -245,7 +245,7 @@ int Board::heuristic(int do_fall) const{
 		continue;
 	}else{
 		for(int i=0;i<buffer.size()-2;i++){
-			int d = calcDist3(buffer.at(i),buffer.at(i+1),buffer.at(i+2));
+			int d = calcDist(buffer.at(i),buffer.at(i+1),buffer.at(i+2));
 			if(d<min || min==-1)
 				min = d;
 		}
@@ -266,13 +266,8 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
 	int f = cost + h;
 
 	if(f > bound) { //fail to continue
-		//fprintf(stderr, "\tDIE! -> cost = %d, bound = %d, heuristic = %d\n", cost, bound, h); 
-		//stack.print();
-		//showBoard();
-		//getc(stdin);
 		return path;
 	}
-	// XXX
 	/*
 	path.printReadablePath();
 	showBoard();
@@ -292,10 +287,6 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
 		if(x+dx[i]<0 || x+dx[i]>=R || y+dy[i]<0 || y+dy[i]>=C) continue;
 		stack.push(dirList[i]);
 		swap(board[x][y], board[x+dx[i]][y+dy[i]]);
-		// XXX
-		/*
-		fprintf(stderr,"(%d, %d) -> ",x,y);
-		stack.print();*/
 
 		Path p = ida_star(x+dx[i], y+dy[i], dirList[i], cost+1, bound, target, stack);
 

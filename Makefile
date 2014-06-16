@@ -1,10 +1,11 @@
 FLAG = -O2 -Wall
 PROG = main.o MoveGem.o
+GPP=g++
 TARGET = main
 .PHONY: clean
 
 $(TARGET): $(PROG)
-	$(CXX) $(PROG) -o $(TARGET)
+	$(CXX) $(PROG) $(FLAG) -o $(TARGET)
 
 %.o: %.cpp
 	$(CXX) $< $(FLAG) -c

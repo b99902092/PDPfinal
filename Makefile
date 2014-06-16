@@ -1,6 +1,5 @@
 FLAG = -O2 -Wall
 PROG = main.o MoveGem.o
-GPP=g++
 TARGET = main
 .PHONY: clean
 

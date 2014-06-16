@@ -142,24 +142,34 @@ Path Board::solve() const {
     
     int maxCmb = maxCombo();
 
-
     for(int targetCmb=maxCmb; targetCmb>=1; targetCmb--) { // at least 1 combo
         for(int bound=1; bound<=MAXSTEP && answer.dirLen==-1; bound++) { // iterative deepening
             fprintf(stderr, "boundary = %d, target combo = %d\n", bound, targetCmb);
+            Path pathArray[R][C];
 //#pragma omp parallel for
             for(int pos=0; pos<R*C; pos++) {
                 int x=pos/C, y=pos%C;
                 Stack stack;
                 //                fprintf(stderr, "(%d, %d)\n", x, y);
-                Path p = b.ida_star(x, y, Direction(null), 0, bound, targetCmb, stack);
-
-                if(p.dirLen != -1) {
-                    answer = p;
+                pathArray[x][y] = b.ida_star(x, y, Direction(null), 0, bound, targetCmb, stack);
+                
+                /*
+                if(pathArray[x][y].dirLen != -1) {
+                    answer = pathArray[x][y];
                     answer.startX = x; 
                     answer.startY = y;
                     break;
                 }
+                */
+                
             }
+            for(int i=0; i<R && answer.dirLen==-1; i++)
+                for(int j=0; j<C && answer.dirLen==-1; j++)
+                    if(pathArray[i][j].dirLen!=-1) {
+                        answer = pathArray[i][j];
+                        answer.startX = i;
+                        answer.startY = j;
+                    }
         }
     }
     return answer;

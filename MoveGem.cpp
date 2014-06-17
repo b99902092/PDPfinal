@@ -134,10 +134,10 @@ Board Board::calcComboAndFallenBoard(int *rtv) const {
 }
 
 Path Board::solve() const {
-    srand(time(NULL));
-    Board b;
-    memcpy(&b, this, sizeof(Board));
 
+    Board boards[R*C];
+    for(int pos=0; pos<R*C; pos++)
+        memcpy(&boards[pos], this, sizeof(Board));
     Path answer;
     
     int maxCmb = maxCombo();
@@ -146,12 +146,13 @@ Path Board::solve() const {
         for(int bound=1; bound<=MAXSTEP && answer.dirLen==-1; bound++) { // iterative deepening
             fprintf(stderr, "boundary = %d, target combo = %d\n", bound, targetCmb);
             Path pathArray[R*C];
-            Stack stack[R*C];
-//#pragma omp parallel for private(j, k)
+            Stack stacks[R*C];
+
+//#pragma omp parallel for
             for(int pos=0; pos<R*C; pos++) {
                 int x=pos/C, y=pos%C;
                 //                fprintf(stderr, "(%d, %d)\n", x, y);
-                pathArray[pos] = b.ida_star(x, y, Direction(null), 0, bound, targetCmb, stack[pos]);
+                pathArray[pos] = boards[pos].ida_star(x, y, Direction(null), 0, bound, targetCmb, stacks[pos]);
                 
                 /*
                 if(pathArray[x][y].dirLen != -1) {

@@ -20,6 +20,7 @@ void* ida_star_thread (void *argPtr) {
 	ThreadArg *args = (ThreadArg*) argPtr;
 	// Test if threads are created succesfully
 	fprintf(stderr,"Thread %d called with arguments: (x,y)=(%d,%d) ,bound=%d, targetCmb=%d\n===\n",pthread_self(),args->x,args->y,args->bound,args->target);
+	//pathArray[x][y] = b.ida_star(x, y, Direction(null), 0, bound, targetCmb, stack);
 	Path p = args->board->ida_star(args->x, args->y, Direction(null), 0, args->bound, args->target, *(args->stack));
 	// lock
 	pthread_mutex_lock(&mutex_ans);
@@ -157,11 +158,8 @@ Board Board::calcComboAndFallenBoard(int *rtv) const {
 
 Path Board::solve() const {
     srand(time(NULL));
-    //Board b;	// might be useless when parallized
-    //memcpy(&b, this, sizeof(Board));
 
     Path answer;
-    //int found = 0;
     pthread_t threads[R*C];
     Board boards[R*C];
     Stack stacks[R*C];
@@ -185,11 +183,16 @@ Path Board::solve() const {
 		    args[pos].target = targetCmb;
 		    args[pos].board = &boards[pos];
 		    args[pos].stack = &stacks[pos];
-		    //Stack stack;
 		    //                fprintf(stderr, "(%d, %d)\n", x, y);
-		    //pathArray[x][y] = b.ida_star(x, y, Direction(null), 0, bound, targetCmb, stack);
 		    fprintf(stderr,"Created thread[%d] (x,y)=(%d,%d) ,bound=%d, targetCmb=%d\n---\n",pos,args[pos].x,args[pos].y,args[pos].bound,args[pos].target);
 		    pthread_create(&threads[pos], NULL, ida_star_thread, &args[pos]);
+		    /*
+		    //Original metod;
+		    Board b;	// might be useless when parallized
+		    memcpy(&b, this, sizeof(Board));
+		    Stack stack;
+		    pathArray[x][y] = b.ida_star(x, y, Direction(null), 0, bound, targetCmb, stack);
+		    */
 		    /*
 		    if(pathArray[x][y].dirLen != -1) {
 			    answer = pathArray[x][y];
@@ -201,7 +204,7 @@ Path Board::solve() const {
 	    }
 	    // join all the threads
 	    for(int pos=0;pos<R*C;pos++){
-		    pthread_join(threads[pos],NULL);
+		    //pthread_join(threads[pos],NULL);
 	    }
 	    fprintf(stderr,"bound %d\ttarget %d\taInt %d\n",bound,targetCmb,aInt);
 	    for(int i=0; i<R && answer.dirLen==-1; i++){
@@ -211,8 +214,6 @@ Path Board::solve() const {
 				    answer = pathArray[i][j];
 				    answer.startX = i;
 				    answer.startY = j;
-				    // Need a break here?
-				    //found = 1;
 			    }
 		    }
 		    fprintf(stderr,"\n");

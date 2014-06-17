@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -7,7 +8,28 @@
 #include "MoveGem.h"
 using namespace std;
 
+// Global
+Path pathArray[R][C];	// need mutex 
+pthread_mutex_t mutex_ans;
+int aInt;
+
 void errorMsg(const char *msg) { fprintf(stderr, "Error!, %s\n", msg); }
+// return 
+//void* Board::ida_star_thread (void *argPtr) {	// it doesn't work
+void* ida_star_thread (void *argPtr) {	 
+	ThreadArg *args = (ThreadArg*) argPtr;
+	// Test if threads are created succesfully
+	fprintf(stderr,"Thread %d called with arguments: (x,y)=(%d,%d) ,bound=%d, targetCmb=%d\n===\n",pthread_self(),args->x,args->y,args->bound,args->target);
+	Path p = args->board->ida_star(args->x, args->y, Direction(null), 0, args->bound, args->target, *(args->stack));
+	// lock
+	pthread_mutex_lock(&mutex_ans);
+	memcpy(&pathArray[args->x][args->y],&p,sizeof(Path));
+	aInt ++;
+	// unlock
+	pthread_mutex_unlock(&mutex_ans);
+
+	return NULL;
+}
 
 void Path::printReadablePath() {
     if(dirLen == -1) {
@@ -135,129 +157,157 @@ Board Board::calcComboAndFallenBoard(int *rtv) const {
 
 Path Board::solve() const {
     srand(time(NULL));
-    Board b;
-    memcpy(&b, this, sizeof(Board));
+    //Board b;	// might be useless when parallized
+    //memcpy(&b, this, sizeof(Board));
 
     Path answer;
+    //int found = 0;
+    pthread_t threads[R*C];
+    Board boards[R*C];
+    Stack stacks[R*C];
+    ThreadArg args[R*C];
+
+    pthread_mutex_init(&mutex_ans,NULL);
+    aInt = 0;
     
     int maxCmb = maxCombo();
 
-    for(int targetCmb=maxCmb; targetCmb>=1; targetCmb--) { // at least 1 combo
+    for(int targetCmb=maxCmb; targetCmb>=1 && answer.dirLen==-1; targetCmb--) { // at least 1 combo
         for(int bound=1; bound<=MAXSTEP && answer.dirLen==-1; bound++) { // iterative deepening
             fprintf(stderr, "boundary = %d, target combo = %d\n", bound, targetCmb);
-            Path pathArray[R][C];
+            //Path pathArray[R][C];	 // make it global
 //#pragma omp parallel for
-            for(int pos=0; pos<R*C; pos++) {
-                int x=pos/C, y=pos%C;
-                Stack stack;
-                //                fprintf(stderr, "(%d, %d)\n", x, y);
-                pathArray[x][y] = b.ida_star(x, y, Direction(null), 0, bound, targetCmb, stack);
-                
-                /*
-                if(pathArray[x][y].dirLen != -1) {
-                    answer = pathArray[x][y];
-                    answer.startX = x; 
-                    answer.startY = y;
-                    break;
-                }
-                */
-                
-            }
-            for(int i=0; i<R && answer.dirLen==-1; i++)
-                for(int j=0; j<C && answer.dirLen==-1; j++)
-                    if(pathArray[i][j].dirLen!=-1) {
-                        answer = pathArray[i][j];
-                        answer.startX = i;
-                        answer.startY = j;
-                    }
-        }
+	    for(int pos=0; pos<R*C; pos++) {
+		    int x=pos/C, y=pos%C;
+		    args[pos].x = x;
+		    args[pos].y = y;
+		    args[pos].bound = bound;
+		    args[pos].target = targetCmb;
+		    args[pos].board = &boards[pos];
+		    args[pos].stack = &stacks[pos];
+		    //Stack stack;
+		    //                fprintf(stderr, "(%d, %d)\n", x, y);
+		    //pathArray[x][y] = b.ida_star(x, y, Direction(null), 0, bound, targetCmb, stack);
+		    fprintf(stderr,"Created thread[%d] (x,y)=(%d,%d) ,bound=%d, targetCmb=%d\n---\n",pos,args[pos].x,args[pos].y,args[pos].bound,args[pos].target);
+		    pthread_create(&threads[pos], NULL, ida_star_thread, &args[pos]);
+		    /*
+		    if(pathArray[x][y].dirLen != -1) {
+			    answer = pathArray[x][y];
+			    answer.startX = x; 
+			    answer.startY = y;
+			    break;
+		    }
+		    */
+	    }
+	    // join all the threads
+	    for(int pos=0;pos<R*C;pos++){
+		    pthread_join(threads[pos],NULL);
+	    }
+	    fprintf(stderr,"bound %d\ttarget %d\taInt %d\n",bound,targetCmb,aInt);
+	    for(int i=0; i<R && answer.dirLen==-1; i++){
+		    for(int j=0; j<C && answer.dirLen==-1; j++){
+			    fprintf(stderr,"%d\t",pathArray[i][i].dirLen);
+			    if(pathArray[i][j].dirLen!=-1) {
+				    answer = pathArray[i][j];
+				    answer.startX = i;
+				    answer.startY = j;
+				    // Need a break here?
+				    //found = 1;
+			    }
+		    }
+		    fprintf(stderr,"\n");
+	    }
+	    char trash;
+	    scanf("%c",&trash);
+	}
     }
+    pthread_mutex_destroy(&mutex_ans);
     return answer;
 }
 
 int Board::calcDist(int a, int b, int c) const{
-    // A--d1--B--d2---C
-    int d = b-a-1 > 0 ? b-a-1 : 0;
-    d += c-b-1 > 0 ? c-b-1 : 0;	// calc d2, c-b
-    return d;
+	// A--d1--B--d2---C
+	int d = b-a-1 > 0 ? b-a-1 : 0;
+	d += c-b-1 > 0 ? c-b-1 : 0;	// calc d2, c-b
+	return d;
 }
 
 int Board::heuristic() const{
-    //return 0;
-    int m = INF;
+	//return 0;
+	int m = INF;
 
-    for(int color=1; color<=6; color++) {
-        int vis[6]={}, arr[6]={}, ind=0;
-        for(int i=0; i<R; i++)
-            for(int j=0; j<C; j++)
-                if(board[i][j] == color) vis[j] = 1;
+	for(int color=1; color<=6; color++) {
+		int vis[6]={}, arr[6]={}, ind=0;
+		for(int i=0; i<R; i++)
+			for(int j=0; j<C; j++)
+				if(board[i][j] == color) vis[j] = 1;
 
-        for(int i=0; i<6; i++)
-            if(vis[i]) arr[ind++] = i;
+		for(int i=0; i<6; i++)
+			if(vis[i]) arr[ind++] = i;
 
-        //if(ind < 3) continue;
-        for(int i=0; i<ind-2; i++) {
-            int d = calcDist(arr[i], arr[i+1], arr[i+2]);
-            if(m > d) m = d;
-        }
-    }
+		//if(ind < 3) continue;
+		for(int i=0; i<ind-2; i++) {
+			int d = calcDist(arr[i], arr[i+1], arr[i+2]);
+			if(m > d) m = d;
+		}
+	}
 
-    if(m == INF) return 0; // unknown situation
-    return m;
+	if(m == INF) return 0; // unknown situation
+	return m;
 
-    // actually, we still need at least one more move to eliminate more gems.
-    // but it can be considered in the condition: (path size == 0).
-    // which exchange the position of two adjacent gems.
+	// actually, we still need at least one more move to eliminate more gems.
+	// but it can be considered in the condition: (path size == 0).
+	// which exchange the position of two adjacent gems.
 }
 
 Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack) {
-    int currentCombo;
-    Path path;
+	int currentCombo;
+	Path path;
 
-    Board fallen = calcComboAndFallenBoard(&currentCombo);
+	Board fallen = calcComboAndFallenBoard(&currentCombo);
 
-    int h = fallen.heuristic();	// that is, when cost = 0 -> count before falling
-    int f = cost + h;
+	int h = fallen.heuristic();	// that is, when cost = 0 -> count before falling
+	int f = cost + h;
 
-    if(f > bound) return path; //fail to continue
-    /*
-       path.printReadablePath();
-       printBoard();
-       fprintf(stderr, "cost = %d, bound = %d, target = %d, board combo = %d, heuristic = %d\n", cost, bound, target, currentCombo,h); 
-       */
-    if(currentCombo >= target) { //find solution, return a solution path
-        fprintf(stderr, "find solution!!, %d\n", currentCombo);
-        printBoard();
-        strncpy(path.dir, stack.s, sizeof(char)*stack.size());
-        path.dir[stack.size()] = 0;
-        path.dirLen = strlen(path.dir);
-        return path;
-    }
+	if(f > bound) return path; //fail to continue
+	/*
+	   path.printReadablePath();
+	   printBoard();
+	   fprintf(stderr, "cost = %d, bound = %d, target = %d, board combo = %d, heuristic = %d\n", cost, bound, target, currentCombo,h); 
+	 */
+	if(currentCombo >= target) { //find solution, return a solution path
+		fprintf(stderr, "find solution!!, %d\n", currentCombo);
+		printBoard();
+		strncpy(path.dir, stack.s, sizeof(char)*stack.size());
+		path.dir[stack.size()] = 0;
+		path.dirLen = strlen(path.dir);
+		return path;
+	}
 
 
-    //    int rnd = rand()%SIZE(order);
-    for(int i=0; i<SIZE(dirList); i++) {
-        //        int i = order[rnd][t];
-        int nx = x+dx[i], ny = y+dy[i];
+	//    int rnd = rand()%SIZE(order);
+	for(int i=0; i<SIZE(dirList); i++) {
+		//        int i = order[rnd][t];
+		int nx = x+dx[i], ny = y+dy[i];
 
-        if(dirList[i] == (10 - prevStep)) continue; //no going back
-        if(nx<0 || nx>=R || ny<0 || ny>=C) continue;
+		if(dirList[i] == (10 - prevStep)) continue; //no going back
+		if(nx<0 || nx>=R || ny<0 || ny>=C) continue;
 
-        stack.push(dirList[i]);
-        swap(board[x][y], board[nx][ny]);
+		stack.push(dirList[i]);
+		swap(board[x][y], board[nx][ny]);
 
-        Path p = ida_star(nx, ny, dirList[i], cost+1, bound, target, stack);
+		Path p = ida_star(nx, ny, dirList[i], cost+1, bound, target, stack);
 
-        if(p.dirLen != -1) {
-            if(path.dirLen == -1 || p.dirLen < path.dirLen) {
-                path = p;
-                break; // can be deleted if we want to find multiple sols someday.
-            }
-        }
+		if(p.dirLen != -1) {
+			if(path.dirLen == -1 || p.dirLen < path.dirLen) {
+				path = p;
+				break; // can be deleted if we want to find multiple sols someday.
+			}
+		}
 
-        swap(board[x][y], board[nx][ny]);
-        stack.pop();
-    }
+		swap(board[x][y], board[nx][ny]);
+		stack.pop();
+	}
 
-    return path;
+	return path;
 }

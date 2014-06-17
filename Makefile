@@ -1,4 +1,4 @@
-FLAG = -O2 -Wall
+FLAG = -O2 -Wall -lpthread
 PROG = main.o MoveGem.o
 TARGET = main
 .PHONY: clean

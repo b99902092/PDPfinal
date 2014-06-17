@@ -68,13 +68,26 @@ struct Board {
     //void show_combo_cost() const;
     int maxCombo () const;
     Path solve() const; /* solve the pazzle and return path */
+    //void* ida_star_thread (void *argPtr);
     //Path turnOne(int x,int y, int step,Path path);
     //void showTurnDetail(Path path) const;
+    
+    Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack);// Try making it public
 
     private:
     void eliminateElement (int i, int j, int clr, int mark[R][C]);
-    Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack);
     int heuristic() const;
     int calcDist(int a, int b, int c) const;
 };
+
+typedef struct threadArg{
+	int x;
+	int y;
+	//Direction prevStep;
+	//int cost; -> 0
+	int bound;
+	int target;
+	Stack *stack;
+	Board *board;
+}ThreadArg;
 

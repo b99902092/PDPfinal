@@ -1,0 +1,11 @@
+7
+start point = (1, 2)
+path length = 8
+up
+right
+down
+down
+right
+down
+right
+up

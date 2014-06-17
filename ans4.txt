@@ -1,0 +1,8 @@
+2
+start point = (3, 4)
+path length = 4
+down
+left
+left
+left
+

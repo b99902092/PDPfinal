@@ -145,13 +145,13 @@ Path Board::solve() const {
     for(int targetCmb=maxCmb; targetCmb>=1; targetCmb--) { // at least 1 combo
         for(int bound=1; bound<=MAXSTEP && answer.dirLen==-1; bound++) { // iterative deepening
             fprintf(stderr, "boundary = %d, target combo = %d\n", bound, targetCmb);
-            Path pathArray[R][C];
-//#pragma omp parallel for
+            Path pathArray[R*C];
+            Stack stack[R*C];
+//#pragma omp parallel for private(j, k)
             for(int pos=0; pos<R*C; pos++) {
                 int x=pos/C, y=pos%C;
-                Stack stack;
                 //                fprintf(stderr, "(%d, %d)\n", x, y);
-                pathArray[x][y] = b.ida_star(x, y, Direction(null), 0, bound, targetCmb, stack);
+                pathArray[pos] = b.ida_star(x, y, Direction(null), 0, bound, targetCmb, stack[pos]);
                 
                 /*
                 if(pathArray[x][y].dirLen != -1) {
@@ -163,13 +163,12 @@ Path Board::solve() const {
                 */
                 
             }
-            for(int i=0; i<R && answer.dirLen==-1; i++)
-                for(int j=0; j<C && answer.dirLen==-1; j++)
-                    if(pathArray[i][j].dirLen!=-1) {
-                        answer = pathArray[i][j];
-                        answer.startX = i;
-                        answer.startY = j;
-                    }
+            for(int pos=0; pos<R*C && answer.dirLen==-1; pos++)
+                if(pathArray[pos].dirLen!=-1) {
+                    answer = pathArray[pos];
+                    answer.startX = pos/C;
+                    answer.startY = pos%C;
+                }
         }
     }
     return answer;

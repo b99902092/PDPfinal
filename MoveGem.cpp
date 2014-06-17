@@ -152,7 +152,7 @@ Path Board::solve() const {
             Path pathArray[R*C];
             Stack stacks[R*C];
 #ifdef OMP
-            #pragma omp parallel for
+            #pragma omp parallel for num_threads(30)
 #endif
             for(int pos=0; pos<R*C; pos++) {
                 int x=pos/C, y=pos%C;

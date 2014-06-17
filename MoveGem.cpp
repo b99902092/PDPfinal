@@ -3,9 +3,13 @@
 #include <cstring>
 #include <algorithm>
 #include <time.h>
-//#include <omp.h>
 #include "MoveGem.h"
+#define OMP   //enable this if you want to use OpenMP
 using namespace std;
+
+#ifdef OMP
+#include <omp.h>
+#endif
 
 void errorMsg(const char *msg) { fprintf(stderr, "Error!, %s\n", msg); }
 
@@ -147,23 +151,15 @@ Path Board::solve() const {
             fprintf(stderr, "boundary = %d, target combo = %d\n", bound, targetCmb);
             Path pathArray[R*C];
             Stack stacks[R*C];
-
-//#pragma omp parallel for
+#ifdef OMP
+            #pragma omp parallel for
+#endif
             for(int pos=0; pos<R*C; pos++) {
                 int x=pos/C, y=pos%C;
-                //                fprintf(stderr, "(%d, %d)\n", x, y);
+
                 pathArray[pos] = boards[pos].ida_star(x, y, Direction(null), 0, bound, targetCmb, stacks[pos]);
-                
-                /*
-                if(pathArray[x][y].dirLen != -1) {
-                    answer = pathArray[x][y];
-                    answer.startX = x; 
-                    answer.startY = y;
-                    break;
-                }
-                */
-                
             }
+
             for(int pos=0; pos<R*C && answer.dirLen==-1; pos++)
                 if(pathArray[pos].dirLen!=-1) {
                     answer = pathArray[pos];

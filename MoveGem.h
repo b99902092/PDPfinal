@@ -1,6 +1,6 @@
 #define R 5
 #define C 6
-#define MAXSTEP 30
+#define MAXSTEP 15
 #define INF 10000000
 #define SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
 #include<cstring>

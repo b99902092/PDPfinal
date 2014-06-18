@@ -157,6 +157,7 @@ Path Board::solve() const {
     Path answer;
     
     int maxCmb = maxCombo();
+    int flag = 0;
 
     for(int targetCmb=maxCmb; targetCmb>=1; targetCmb--) { // at least 1 combo
         for(int bound=1; bound<=MAXSTEP && answer.dirLen==-1; bound++) { // iterative deepening
@@ -169,7 +170,7 @@ Path Board::solve() const {
             for(int pos=0; pos<R*C; pos++) {
                 int x=pos/C, y=pos%C;
 
-                pathArray[pos] = boards[pos].ida_star(x, y, Direction(null), 0, bound, targetCmb, stacks[pos]);
+                pathArray[pos] = boards[pos].ida_star(x, y, Direction(null), 0, bound, targetCmb, stacks[pos], flag);
             }
 
             for(int pos=0; pos<R*C && answer.dirLen==-1; pos++)
@@ -180,6 +181,22 @@ Path Board::solve() const {
                 }
         }
     }
+
+    if(answer.dirLen==0) { // for special case, at least move 1 step.
+        for(int i=0; i<R && answer.dirLen==0; i++)
+            for(int j=0; j<C && answer.dirLen==0; j++)
+                if(j+1<C && board[i][j] == board[i][j+1]) {
+                    answer.dirLen = 1;
+                    answer.startX = i; answer.startY = j;
+                    answer.dir[0] = right;
+                }
+                else if(i+1<R && board[i][j] == board[i+1][j]) {
+                    answer.dirLen = 1;
+                    answer.startX = i; answer.startY = j;
+                    answer.dir[0] = down;
+                }
+    }
+
     return answer;
 }
 
@@ -218,9 +235,10 @@ int Board::heuristic() const{
     // which exchange the position of two adjacent gems.
 }
 
-Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack) {
+Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack, int &flag) {
     int currentCombo;
     Path path;
+    if(flag) return path; // global flag, break the recursion when solution found
 
     Board fallen = calcComboAndFallenBoard(&currentCombo);
 
@@ -239,6 +257,7 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
         strncpy(path.dir, stack.s, sizeof(char)*stack.size());
         path.dir[stack.size()] = 0;
         path.dirLen = strlen(path.dir);
+        flag = 1;
         return path;
     }
 
@@ -254,7 +273,7 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
         stack.push(dirList[i]);
         swap(board[x][y], board[nx][ny]);
 
-        Path p = ida_star(nx, ny, dirList[i], cost+1, bound, target, stack);
+        Path p = ida_star(nx, ny, dirList[i], cost+1, bound, target, stack, flag);
 
         if(p.dirLen != -1) {
             if(path.dirLen == -1 || p.dirLen < path.dirLen) {

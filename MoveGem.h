@@ -74,7 +74,7 @@ struct Board {
 
     private:
     void eliminateElement (int i, int j, int clr, int mark[R][C]);
-    Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack);
+    Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack, int &flag);
     int heuristic() const;
     int calcDist(int a, int b, int c) const;
 };

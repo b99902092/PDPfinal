@@ -1,6 +1,6 @@
 #define R 5
 #define C 6
-#define MAXSTEP 15
+#define MAXSTEP 20
 #define INF 10000000
 #define SIZE(arr) (int)(sizeof(arr)/sizeof(arr[0]))
 #include<cstring>
@@ -75,7 +75,7 @@ struct Board {
     private:
     void eliminateElement (int i, int j, int clr, int mark[R][C]);
     Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack, int &flag);
-    int heuristic() const;
+    int heuristic(int cmbNeeded) const;
     int calcDist(int a, int b, int c) const;
 };
 

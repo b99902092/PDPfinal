@@ -206,11 +206,11 @@ int Board::calcDist(int a, int b, int c) const{
     return d;
 }
 
-int Board::heuristic() const{
+int Board::heuristic(int cmbNeeded) const{
     //return 0;
     int m = INF;
 
-    for(int color=1; color<=6; color++) {
+    for(int color=1; color<=6 && m; color++) {
         int vis[6]={}, arr[6]={}, ind=0;
         for(int i=0; i<R; i++)
             for(int j=0; j<C; j++)
@@ -227,7 +227,7 @@ int Board::heuristic() const{
     }
 
     if(m == INF) return 0; // unknown situation
-    return m;
+    return m + (cmbNeeded - 1); //magic, don't touch, actually it should overestimate....
 
     // actually, we still need at least one more move to eliminate more gems.
     // but it can be considered in the condition: (path size == 0).
@@ -241,7 +241,7 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
 
     Board fallen = calcComboAndFallenBoard(&currentCombo);
 
-    int h = fallen.heuristic();	// that is, when cost = 0 -> count before falling
+    int h = fallen.heuristic(target - currentCombo);
     int f = cost + h;
 
     if(f > bound) return path; //fail to continue

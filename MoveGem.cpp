@@ -3,9 +3,13 @@
 #include <cstring>
 #include <algorithm>
 #include <time.h>
-//#include <omp.h>
 #include "MoveGem.h"
+#define OMP   //enable this if you want to use OpenMP
 using namespace std;
+
+#ifdef OMP
+#include <omp.h>
+#endif
 
 void errorMsg(const char *msg) { fprintf(stderr, "Error!, %s\n", msg); }
 
@@ -22,6 +26,17 @@ void Path::printReadablePath() {
         if(dir[i] == 4) fprintf(stderr, "left\n");
         if(dir[i] == 6) fprintf(stderr, "right\n");
     }
+}
+
+void Path::print() {
+    if(dirLen==-1) {
+        printf("-1 -1\n");
+        return;
+    }
+    printf("%d %d ", startX, startY);
+    for(int i=0; i<dirLen; i++)
+        printf("%d", dir[i]);
+    fflush(stdout);
 }
 
 int Board::readInput(const char *path) {
@@ -135,43 +150,52 @@ Board Board::calcComboAndFallenBoard(int *rtv) const {
 
 Path Board::solve() const {
     srand(time(NULL));
-    Board b;
-    memcpy(&b, this, sizeof(Board));
-
+    Board boards[R*C];
+    for(int pos=0; pos<R*C; pos++)
+        memcpy(&boards[pos], this, sizeof(Board));
     Path answer;
     
     int maxCmb = maxCombo();
+    int flag = 0;
 
     for(int targetCmb=maxCmb; targetCmb>=1; targetCmb--) { // at least 1 combo
         for(int bound=1; bound<=MAXSTEP && answer.dirLen==-1; bound++) { // iterative deepening
             fprintf(stderr, "boundary = %d, target combo = %d\n", bound, targetCmb);
-            Path pathArray[R][C];
-//#pragma omp parallel for
+            Path pathArray[R*C];
+            Stack stacks[R*C];
+#ifdef OMP
+            #pragma omp parallel for num_threads(30)
+#endif
             for(int pos=0; pos<R*C; pos++) {
                 int x=pos/C, y=pos%C;
-                Stack stack;
-                //                fprintf(stderr, "(%d, %d)\n", x, y);
-                pathArray[x][y] = b.ida_star(x, y, Direction(null), 0, bound, targetCmb, stack);
-                
-                /*
-                if(pathArray[x][y].dirLen != -1) {
-                    answer = pathArray[x][y];
-                    answer.startX = x; 
-                    answer.startY = y;
-                    break;
-                }
-                */
-                
+
+                pathArray[pos] = boards[pos].ida_star(x, y, Direction(null), 0, bound, targetCmb, stacks[pos], flag);
             }
-            for(int i=0; i<R && answer.dirLen==-1; i++)
-                for(int j=0; j<C && answer.dirLen==-1; j++)
-                    if(pathArray[i][j].dirLen!=-1) {
-                        answer = pathArray[i][j];
-                        answer.startX = i;
-                        answer.startY = j;
-                    }
+
+            for(int pos=0; pos<R*C && answer.dirLen==-1; pos++)
+                if(pathArray[pos].dirLen!=-1) {
+                    answer = pathArray[pos];
+                    answer.startX = pos/C;
+                    answer.startY = pos%C;
+                }
         }
     }
+
+    if(answer.dirLen==0) { // for special case, at least move 1 step.
+        for(int i=0; i<R && answer.dirLen==0; i++)
+            for(int j=0; j<C && answer.dirLen==0; j++)
+                if(j+1<C && board[i][j] == board[i][j+1]) {
+                    answer.dirLen = 1;
+                    answer.startX = i; answer.startY = j;
+                    answer.dir[0] = right;
+                }
+                else if(i+1<R && board[i][j] == board[i+1][j]) {
+                    answer.dirLen = 1;
+                    answer.startX = i; answer.startY = j;
+                    answer.dir[0] = down;
+                }
+    }
+
     return answer;
 }
 
@@ -210,9 +234,10 @@ int Board::heuristic() const{
     // which exchange the position of two adjacent gems.
 }
 
-Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack) {
+Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack, int &flag) {
     int currentCombo;
     Path path;
+    if(flag) return path; // global flag, break the recursion when solution found
 
     Board fallen = calcComboAndFallenBoard(&currentCombo);
 
@@ -231,6 +256,7 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
         strncpy(path.dir, stack.s, sizeof(char)*stack.size());
         path.dir[stack.size()] = 0;
         path.dirLen = strlen(path.dir);
+        flag = 1;
         return path;
     }
 
@@ -246,7 +272,7 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
         stack.push(dirList[i]);
         swap(board[x][y], board[nx][ny]);
 
-        Path p = ida_star(nx, ny, dirList[i], cost+1, bound, target, stack);
+        Path p = ida_star(nx, ny, dirList[i], cost+1, bound, target, stack, flag);
 
         if(p.dirLen != -1) {
             if(path.dirLen == -1 || p.dirLen < path.dirLen) {

@@ -2,7 +2,7 @@
 #define C 6
 #define MAXSTEP 15
 #define INF 10000000
-#define SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
+#define SIZE(arr) (int)(sizeof(arr)/sizeof(arr[0]))
 #include<cstring>
 
 typedef enum {null=0, up=8, down=2, left=4, right=6} Direction;
@@ -10,14 +10,14 @@ typedef enum {null=0, up=8, down=2, left=4, right=6} Direction;
 static const Direction dirList[] = { up, down, left, right };
 
 static int dx[4]={-1, 1, 0, 0}, dy[4]={0, 0, -1, 1};
-
+/*
 static int order[24][4]={
     {0, 1, 2, 3}, {0, 1, 3, 2}, {0, 2, 1, 3}, {0, 2, 3, 1}, {0, 3, 1, 2}, {0, 3, 2, 1},
     {1, 0, 2, 3}, {1, 0, 3, 2}, {1, 2, 0, 3}, {1, 2, 3, 0}, {1, 3, 0, 2}, {1, 3, 2, 0},
     {2, 0, 1, 3}, {2, 0, 3, 1}, {2, 1, 0, 3}, {2, 1, 3, 0}, {2, 3, 0, 1}, {2, 3, 1, 0},
     {3, 0, 1, 2}, {3, 0, 2, 1}, {3, 1, 0, 2}, {3, 1, 2 ,0}, {3, 2, 0, 1}, {3, 2, 1, 0}
 };
-
+*/
 struct Stack {
     char s[MAXSTEP+1];
     Stack() { top = 0; }
@@ -47,6 +47,7 @@ struct Path {
         dirLen = startX = startY = -1;
     }
     void printReadablePath();
+    void print();
     /* max step 30, vertical and horizontal moves only for now */
     /* direction represent as:
      * 7 8 9
@@ -73,7 +74,7 @@ struct Board {
 
     private:
     void eliminateElement (int i, int j, int clr, int mark[R][C]);
-    Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack);
+    Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack, int &flag);
     int heuristic() const;
     int calcDist(int a, int b, int c) const;
 };

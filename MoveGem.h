@@ -47,6 +47,7 @@ struct Path {
         dirLen = startX = startY = -1;
     }
     void printReadablePath();
+    void print();
     /* max step 30, vertical and horizontal moves only for now */
     /* direction represent as:
      * 7 8 9

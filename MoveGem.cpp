@@ -28,6 +28,18 @@ void Path::printReadablePath() {
     }
 }
 
+void Path::print() {
+    if(dirLen==-1) {
+        printf("-1 -1\n");
+        return;
+    }
+    printf("%d %d\n", startX, startY);
+    printf("%d\n", dirLen);
+    for(int i=0; i<dirLen; i++)
+        printf("%d\n", dir[i]);
+    fflush(stdout);
+}
+
 int Board::readInput(const char *path) {
     FILE *fp = fopen(path, "r");
     if(fp == NULL) {

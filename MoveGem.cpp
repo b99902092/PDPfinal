@@ -210,7 +210,11 @@ int Board::heuristic(int cmbNeeded) const{
     //return 0;
     int m = INF;
 
+<<<<<<< HEAD
     for(int color=1; color<=6 && m!=0; color++) {
+=======
+    for(int color=1; color<=6 && m; color++) {
+>>>>>>> f4add4a2463e951b17a1dc88abf9ff57b48b3595
         int vis[6]={}, arr[6]={}, ind=0;
         for(int i=0; i<R; i++)
             for(int j=0; j<C; j++)

@@ -33,10 +33,9 @@ void Path::print() {
         printf("-1 -1\n");
         return;
     }
-    printf("%d %d\n", startX, startY);
-    printf("%d\n", dirLen);
+    printf("%d %d ", startX, startY);
     for(int i=0; i<dirLen; i++)
-        printf("%d\n", dir[i]);
+        printf("%d", dir[i]);
     fflush(stdout);
 }
 

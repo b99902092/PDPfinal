@@ -20,6 +20,7 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "max possible Combo = %d, calcBoardCombo = %d\n", board.maxCombo(), cmb);
     Path path = board.solve();
     path.printReadablePath();
+    path.print();
     //board.showTurnDetail(path);
 
     return 0;

@@ -4,8 +4,8 @@
 #include <cstring>
 #include <algorithm>
 #include <time.h>
-//#include <omp.h>
 #include "MoveGem.h"
+#define OMP   //enable this if you want to use OpenMP
 using namespace std;
 
 // Global
@@ -45,6 +45,17 @@ void Path::printReadablePath() {
         if(dir[i] == 4) fprintf(stderr, "left\n");
         if(dir[i] == 6) fprintf(stderr, "right\n");
     }
+}
+
+void Path::print() {
+    if(dirLen==-1) {
+        printf("-1 -1\n");
+        return;
+    }
+    printf("%d %d ", startX, startY);
+    for(int i=0; i<dirLen; i++)
+        printf("%d", dir[i]);
+    fflush(stdout);
 }
 
 int Board::readInput(const char *path) {
@@ -158,23 +169,25 @@ Board Board::calcComboAndFallenBoard(int *rtv) const {
 
 Path Board::solve() const {
     srand(time(NULL));
-
-    Path answer;
-    pthread_t threads[R*C];
     Board boards[R*C];
-    Stack stacks[R*C];
+    for(int pos=0; pos<R*C; pos++)
+        memcpy(&boards[pos], this, sizeof(Board));
+    pthread_t threads[R*C];
     ThreadArg args[R*C];
+    Path answer;
 
     pthread_mutex_init(&mutex_ans,NULL);
     aInt = 0;
     
     int maxCmb = maxCombo();
+    int flag = 0;
 
     for(int targetCmb=maxCmb; targetCmb>=1 && answer.dirLen==-1; targetCmb--) { // at least 1 combo
         for(int bound=1; bound<=MAXSTEP && answer.dirLen==-1; bound++) { // iterative deepening
             fprintf(stderr, "boundary = %d, target combo = %d\n", bound, targetCmb);
-            //Path pathArray[R][C];	 // make it global
-//#pragma omp parallel for
+	    Stack stacks[R*C];
+	    //Path pathArray[R][C];	 // make it global
+	    //#pragma omp parallel for
 	    for(int pos=0; pos<R*C; pos++) {
 		    int x=pos/C, y=pos%C;
 		    args[pos].x = x;
@@ -192,15 +205,15 @@ Path Board::solve() const {
 		    memcpy(&b, this, sizeof(Board));
 		    Stack stack;
 		    pathArray[x][y] = b.ida_star(x, y, Direction(null), 0, bound, targetCmb, stack);
-		    */
+		     */
 		    /*
-		    if(pathArray[x][y].dirLen != -1) {
-			    answer = pathArray[x][y];
-			    answer.startX = x; 
-			    answer.startY = y;
-			    break;
-		    }
-		    */
+		       if(pathArray[x][y].dirLen != -1) {
+		       answer = pathArray[x][y];
+		       answer.startX = x; 
+		       answer.startY = y;
+		       break;
+		       }
+		     */
 	    }
 	    // join all the threads
 	    for(int pos=0;pos<R*C;pos++){
@@ -222,6 +235,20 @@ Path Board::solve() const {
 	    scanf("%c",&trash);
 	}
     }
+    if(answer.dirLen==0) { // for special case, at least move 1 step.
+	    for(int i=0; i<R && answer.dirLen==0; i++)
+		    for(int j=0; j<C && answer.dirLen==0; j++)
+			    if(j+1<C && board[i][j] == board[i][j+1]) {
+				    answer.dirLen = 1;
+				    answer.startX = i; answer.startY = j;
+				    answer.dir[0] = right;
+			    }
+			    else if(i+1<R && board[i][j] == board[i+1][j]) {
+				    answer.dirLen = 1;
+				    answer.startX = i; answer.startY = j;
+				    answer.dir[0] = down;
+			    }
+    }
     pthread_mutex_destroy(&mutex_ans);
     return answer;
 }
@@ -233,11 +260,11 @@ int Board::calcDist(int a, int b, int c) const{
 	return d;
 }
 
-int Board::heuristic() const{
+int Board::heuristic(int cmbNeeded) const{
 	//return 0;
 	int m = INF;
 
-	for(int color=1; color<=6; color++) {
+	for(int color=1; color<=6 && m; color++) {
 		int vis[6]={}, arr[6]={}, ind=0;
 		for(int i=0; i<R; i++)
 			for(int j=0; j<C; j++)
@@ -254,20 +281,21 @@ int Board::heuristic() const{
 	}
 
 	if(m == INF) return 0; // unknown situation
-	return m;
+	return m + (cmbNeeded - 1); //magic, don't touch, actually it should overestimate....
 
 	// actually, we still need at least one more move to eliminate more gems.
 	// but it can be considered in the condition: (path size == 0).
 	// which exchange the position of two adjacent gems.
 }
 
-Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack) {
+Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack, int &flag) {
 	int currentCombo;
 	Path path;
+	if(flag) return path; // global flag, break the recursion when solution found
 
 	Board fallen = calcComboAndFallenBoard(&currentCombo);
 
-	int h = fallen.heuristic();	// that is, when cost = 0 -> count before falling
+	int h = fallen.heuristic(target - currentCombo);
 	int f = cost + h;
 
 	if(f > bound) return path; //fail to continue
@@ -282,6 +310,7 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
 		strncpy(path.dir, stack.s, sizeof(char)*stack.size());
 		path.dir[stack.size()] = 0;
 		path.dirLen = strlen(path.dir);
+		flag = 1;
 		return path;
 	}
 
@@ -297,7 +326,7 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
 		stack.push(dirList[i]);
 		swap(board[x][y], board[nx][ny]);
 
-		Path p = ida_star(nx, ny, dirList[i], cost+1, bound, target, stack);
+		Path p = ida_star(nx, ny, dirList[i], cost+1, bound, target, stack, flag);
 
 		if(p.dirLen != -1) {
 			if(path.dirLen == -1 || p.dirLen < path.dirLen) {

@@ -1,14 +1,23 @@
 FLAG = -O2 -Wall -lpthread
 PROG = main.o MoveGem.o
+HEADER = MoveGem.h
 TARGET = main
 .PHONY: clean
 
-$(TARGET): $(PROG)
+$(TARGET): $(PROG) 
 	$(CXX) $(PROG) $(FLAG) -o $(TARGET)
 
-%.o: %.cpp
+%.o: %.cpp %.h
 	$(CXX) $< $(FLAG) -c
 clean:
 	rm -rf *.o $(TARGET)
-run: $(TARGET)
-	./$(TARGET) input1.txt
+run1: $(TARGET)
+	time ./$(TARGET) input1.txt
+run2: $(TARGET)
+	time ./$(TARGET) input2.txt
+run3: $(TARGET)
+	time ./$(TARGET) input3.txt
+run4: $(TARGET)
+	time ./$(TARGET) input4.txt
+run5: $(TARGET)
+	time ./$(TARGET) input5.txt

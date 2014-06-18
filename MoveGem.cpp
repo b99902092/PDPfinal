@@ -149,7 +149,7 @@ Board Board::calcComboAndFallenBoard(int *rtv) const {
 }
 
 Path Board::solve() const {
-
+    srand(time(NULL));
     Board boards[R*C];
     for(int pos=0; pos<R*C; pos++)
         memcpy(&boards[pos], this, sizeof(Board));

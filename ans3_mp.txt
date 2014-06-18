@@ -1,0 +1,5 @@
+7
+start point = (0, 0)
+path length = 1
+right
+

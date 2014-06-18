@@ -72,8 +72,7 @@ struct Board {
     //void* ida_star_thread (void *argPtr);
     //Path turnOne(int x,int y, int step,Path path);
     //void showTurnDetail(Path path) const;
-    
-    Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack);// Try making it public
+    Path ida_star(int x, int y, Direction prevStep, int cost, int bound, int target, Stack &stack, int &flag); 
 
     private:
     void eliminateElement (int i, int j, int clr, int mark[R][C]);

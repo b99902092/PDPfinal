@@ -11,7 +11,7 @@ using namespace std;
 // Global
 Path pathArray[R][C];	// need mutex 
 pthread_mutex_t mutex_ans;
-int aInt;
+int flag;
 
 void errorMsg(const char *msg) { fprintf(stderr, "Error!, %s\n", msg); }
 // return 
@@ -19,13 +19,14 @@ void errorMsg(const char *msg) { fprintf(stderr, "Error!, %s\n", msg); }
 void* ida_star_thread (void *argPtr) {	 
 	ThreadArg *args = (ThreadArg*) argPtr;
 	// Test if threads are created succesfully
-	fprintf(stderr,"Thread %d called with arguments: (x,y)=(%d,%d) ,bound=%d, targetCmb=%d\n===\n",pthread_self(),args->x,args->y,args->bound,args->target);
+	//fprintf(stderr,"Thread %d called with arguments: (x,y)=(%d,%d) ,bound=%d, targetCmb=%d\n===\n",pthread_self(),args->x,args->y,args->bound,args->target);
 	//pathArray[x][y] = b.ida_star(x, y, Direction(null), 0, bound, targetCmb, stack);
-	Path p = args->board->ida_star(args->x, args->y, Direction(null), 0, args->bound, args->target, *(args->stack));
+	Path p = args->board->ida_star(args->x, args->y, Direction(null), 0, args->bound, args->target, *(args->stack), flag);
 	// lock
 	pthread_mutex_lock(&mutex_ans);
 	memcpy(&pathArray[args->x][args->y],&p,sizeof(Path));
-	aInt ++;
+	if(p.dirLen != -1)
+		flag = 1;
 	// unlock
 	pthread_mutex_unlock(&mutex_ans);
 
@@ -177,10 +178,9 @@ Path Board::solve() const {
     Path answer;
 
     pthread_mutex_init(&mutex_ans,NULL);
-    aInt = 0;
     
     int maxCmb = maxCombo();
-    int flag = 0;
+    flag = 0;
 
     for(int targetCmb=maxCmb; targetCmb>=1 && answer.dirLen==-1; targetCmb--) { // at least 1 combo
         for(int bound=1; bound<=MAXSTEP && answer.dirLen==-1; bound++) { // iterative deepening
@@ -197,7 +197,7 @@ Path Board::solve() const {
 		    args[pos].board = &boards[pos];
 		    args[pos].stack = &stacks[pos];
 		    //                fprintf(stderr, "(%d, %d)\n", x, y);
-		    fprintf(stderr,"Created thread[%d] (x,y)=(%d,%d) ,bound=%d, targetCmb=%d\n---\n",pos,args[pos].x,args[pos].y,args[pos].bound,args[pos].target);
+		    //fprintf(stderr,"Created thread[%d] (x,y)=(%d,%d) ,bound=%d, targetCmb=%d\n---\n",pos,args[pos].x,args[pos].y,args[pos].bound,args[pos].target);
 		    pthread_create(&threads[pos], NULL, ida_star_thread, &args[pos]);
 		    /*
 		    //Original metod;
@@ -219,20 +219,22 @@ Path Board::solve() const {
 	    for(int pos=0;pos<R*C;pos++){
 		    //pthread_join(threads[pos],NULL);
 	    }
-	    fprintf(stderr,"bound %d\ttarget %d\taInt %d\n",bound,targetCmb,aInt);
+	    //fprintf(stderr,"bound %d\ttarget %d\t\n",bound,targetCmb);
 	    for(int i=0; i<R && answer.dirLen==-1; i++){
 		    for(int j=0; j<C && answer.dirLen==-1; j++){
-			    fprintf(stderr,"%d\t",pathArray[i][i].dirLen);
+			    //fprintf(stderr,"%d\t",pathArray[i][i].dirLen);
 			    if(pathArray[i][j].dirLen!=-1) {
 				    answer = pathArray[i][j];
 				    answer.startX = i;
 				    answer.startY = j;
 			    }
 		    }
-		    fprintf(stderr,"\n");
+		    //fprintf(stderr,"\n");
 	    }
+	    /*
 	    char trash;
 	    scanf("%c",&trash);
+	    */
 	}
     }
     if(answer.dirLen==0) { // for special case, at least move 1 step.
@@ -310,7 +312,11 @@ Path Board::ida_star(int x, int y, Direction prevStep, int cost, int bound, int 
 		strncpy(path.dir, stack.s, sizeof(char)*stack.size());
 		path.dir[stack.size()] = 0;
 		path.dirLen = strlen(path.dir);
+		// lock
+		pthread_mutex_lock(&mutex_ans);
 		flag = 1;
+		// unlock
+		pthread_mutex_unlock(&mutex_ans);
 		return path;
 	}
 

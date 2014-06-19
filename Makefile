@@ -9,8 +9,10 @@ $(TARGET): $(PROG)
 
 %.o: %.cpp %.h
 	$(CXX) $< $(FLAG) -c
+server:
+	gcc server.c -o server
 clean:
-	rm -rf *.o $(TARGET)
+	rm -rf *.o $(TARGET) server
 run1: $(TARGET)
 	time ./$(TARGET) input1.txt
 run2: $(TARGET)

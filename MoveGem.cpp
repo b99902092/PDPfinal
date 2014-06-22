@@ -217,7 +217,7 @@ Path Board::solve() const {
 	    }
 	    // join all the threads
 	    for(int pos=0;pos<R*C;pos++){
-		    //pthread_join(threads[pos],NULL);
+		    pthread_join(threads[pos],NULL);
 	    }
 	    //fprintf(stderr,"bound %d\ttarget %d\t\n",bound,targetCmb);
 	    for(int i=0; i<R && answer.dirLen==-1; i++){

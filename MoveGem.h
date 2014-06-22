@@ -20,7 +20,7 @@ static int order[24][4]={
 */
 struct Stack {
     char s[MAXSTEP+1];
-    Stack() { top = 0; }
+    Stack() { top = 0; memset(s, 0, sizeof(s)); }
     void push(int x) { s[top++] = x; }
     char pop() { return s[--top]; }
     int size() { return top; }
